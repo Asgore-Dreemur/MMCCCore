@@ -1,0 +1,72 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System.IO;
+using MMCCCore.Wrapper;
+using System.Security.Cryptography;
+using MMCCCore.Model.Core;
+using MMCCCore.Model.Wrapper;
+using System.Threading;
+using MMCCCore.Model.MinecraftFiles;
+
+namespace MMCCCore.Module.Minecraft
+{
+    public class MCAssets : InstallerModel
+    {
+        private MultiFileDownloader downloader;
+        public MinecraftFilesDownloadInfo DownloadAssets(string AssetIndexJson, string GameDir, GameSources DownloadSource, bool isSkipDownloadedFile, int MaxThreadCount = 128)
+        {
+            try
+            {
+                Stack<DownloadTaskInfo> DownloadStack = new Stack<DownloadTaskInfo>();
+                JObject AssetIndexInfo = JObject.Parse(AssetIndexJson);
+                Dictionary<string, JObject> AssetsDict = AssetIndexInfo["objects"].ToObject<Dictionary<string, JObject>>();
+                foreach (JObject AssetInfo in AssetsDict.Values)
+                {
+                    string AssetPath = Path.Combine(GameDir, "assets\\objects", AssetInfo["hash"].ToString().Substring(0, 2));
+                    OtherTools.CreateDir(AssetPath);
+                    AssetPath = Path.Combine(AssetPath, AssetInfo["hash"].ToString());
+                    string DownloadRoot = DownloadSource == GameSources.Bmclapi ? "https://bmclapi2.bangbang93.com/assets/"
+                        : DownloadSource == GameSources.Mcbbs ? "https://download.mcbbs.net/assets/"
+                        : "http://resources.download.minecraft.net/";
+                    DownloadStack.Push(new DownloadTaskInfo { DownloadUrl = $"{DownloadRoot}{AssetInfo["hash"].ToString().Substring(0, 2)}/{AssetInfo["hash"].ToString()}",
+                        DestPath = AssetPath,
+                        MaxTryCount = 4,
+                        Sha1 = AssetInfo["hash"].ToString(),
+                        Sha1Vaildate = true,
+                        isSkipDownloadedFile = isSkipDownloadedFile
+                    });
+                }
+                if(DownloadStack.Count == 0)
+                {
+                    return new MinecraftFilesDownloadInfo
+                    {
+                        DownloadResult = MinecraftFilesDownloadResult.Success
+                    };
+                }
+                downloader = new MultiFileDownloader(DownloadStack, MaxThreadCount);
+                downloader.ProgressChanged += Downloader_ProgressChanged;
+                downloader.StartDownload();
+                downloader.WaitDownloadComplete();
+                return new MinecraftFilesDownloadInfo
+                {
+                    DownloadResult = MinecraftFilesDownloadResult.Success
+                };
+            }catch(Exception e)
+            {
+                return new MinecraftFilesDownloadInfo { DownloadResult = MinecraftFilesDownloadResult.Error, ErrorException = e };
+            }
+        }
+
+        private void Downloader_ProgressChanged(object sender, (int, int, DownloadResultModel) e)
+        {
+            if (e.Item3.Result == DownloadResult.Error) downloader.needStop = true;
+            double DownloadedProgress = (double)Math.Round((decimal)e.Item1 / e.Item2, 2);
+            OnProgressChanged(DownloadedProgress, null);
+        }
+    }
+}
