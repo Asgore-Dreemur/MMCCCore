@@ -18,9 +18,6 @@ namespace MMCCCore.Wrapper
             if (DownloadInfo.isSkipDownloadedFile)
             {
                 var result = OtherTools.VaildateSha1(DownloadInfo.DestPath, DownloadInfo.Sha1);
-                if (!result.isSuccess) return new DownloadResultModel { DownloadInfo = DownloadInfo,
-                    Result = DownloadResult.Error,
-                    ErrorException = result.ErrorException };
                 if (result.isVaildated) return new DownloadResultModel { DownloadInfo = DownloadInfo, Result = DownloadResult.Skipped };
             }
             int ErrorCount = 0;
@@ -57,6 +54,7 @@ namespace MMCCCore.Wrapper
                             _stream.Close();
                         }
                     }
+                    
                     return new DownloadResultModel { DownloadInfo = DownloadInfo, Result = DownloadResult.Success };
                 }
                 catch (Exception e)
@@ -69,16 +67,21 @@ namespace MMCCCore.Wrapper
         }
         public static DownloadResultModel StartDownload(DownloadTaskInfo DownloadInfo)
         {
-            if (DownloadInfo.isSkipDownloadedFile)
+            DownloadResultModel FileDownloadResult = new DownloadResultModel() { DownloadInfo = DownloadInfo };
+            if (DownloadInfo.isSkipDownloadedFile && !string.IsNullOrWhiteSpace(DownloadInfo.Sha1))
             {
                 var result = OtherTools.VaildateSha1(DownloadInfo.DestPath, DownloadInfo.Sha1);
-                if (!result.isSuccess) return new DownloadResultModel
+                if (!result.isSuccess)
                 {
-                    DownloadInfo = DownloadInfo,
-                    Result = DownloadResult.Error,
-                    ErrorException = result.ErrorException
-                };
-                if (result.isVaildated) return new DownloadResultModel { DownloadInfo = DownloadInfo, Result = DownloadResult.Skipped };
+                    FileDownloadResult.Result = DownloadResult.Error;
+                    FileDownloadResult.ErrorException = result.ErrorException;
+                    return FileDownloadResult;
+                }
+                if (result.isVaildated)
+                {
+                    FileDownloadResult.Result = DownloadResult.Skipped;
+                    return FileDownloadResult;
+                }
             }
             int ErrorCount = 0;
             Exception exception = null;
@@ -113,7 +116,28 @@ namespace MMCCCore.Wrapper
                             _stream.Close();
                         }
                     }
-                    return new DownloadResultModel { DownloadInfo = DownloadInfo, Result = DownloadResult.Success };
+                    if (DownloadInfo.Sha1Vaildate && !string.IsNullOrWhiteSpace(DownloadInfo.Sha1))
+                    {
+                        var result = OtherTools.VaildateSha1(DownloadInfo.DestPath, DownloadInfo.Sha1);
+                        if (!result.isSuccess)
+                        {
+                            FileDownloadResult.Result = DownloadResult.Error;
+                            FileDownloadResult.ErrorException = result.ErrorException;
+                            return FileDownloadResult;
+                        }
+                        if (result.isVaildated)
+                        {
+                            FileDownloadResult.Result = DownloadResult.Success;
+                            return FileDownloadResult;
+                        }
+                        else if (!result.isVaildated)
+                        {
+                            FileDownloadResult.Result = DownloadResult.Error;
+                            FileDownloadResult.ErrorException = result.ErrorException;
+                            return FileDownloadResult;
+                        }
+                    }
+                    else return new DownloadResultModel { DownloadInfo = DownloadInfo, Result = DownloadResult.Success };
                 }
                 catch (Exception e)
                 {

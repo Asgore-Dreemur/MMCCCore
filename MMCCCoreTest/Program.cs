@@ -20,42 +20,30 @@ namespace MMCCCoreTest
     {
         static void Main(string[] args)
         {
-            /*foreach(var item in CoreWrapper.GetMCVersions(GameSources.Mcbbs).AllVersions)
+            string PlayerName = "Asriel";
+            string MinecraftDir = ".minecraft";
+            string VersionName = "1.16.5";
+            Account account = OfflineAuthenticator.OfflineAuthenticate(PlayerName);
+            var LaunchCore = CoreWrapper.GetCoreForId(MinecraftDir, VersionName);
+            LauncherSettings settings = new LauncherSettings
             {
-                if(item.Id == "1.16.5")
+                JvmSettings = new LauncherJvmSettings
                 {
-                    MinecraftInstaller installer = new MinecraftInstaller("C:\\MMCCTest.Minecraft", item, GameSources.Mcbbs, "1.16.5APITest");
-                    installer.ProgressChanged += Installer_ProgressChanged;
-                    var result = installer.InstallMinecraft(true);
-                    if (result.Exception != null) Console.WriteLine(result.Exception.Message);
-                    break;
-                }
-            }
-            var item = CoreWrapper.GetCoreForId("C:\\MMCCTest.Minecraft", "1.16.5Test71");
-            MinecraftLauncher launcher = new MinecraftLauncher(item, OfflineAuthenticator.OfflineAuthenticate("Asriel"),
-                new LauncherSettings
-                {
-                    JvmSettings = new LauncherJvmSettings
-                    {
-                        JavawPath = "java",
-                        MinMemory = 512,
-                        MaxMemory = 1000
-                    }
-                });
-            launcher.Minecraft_LogAdded += (_, e) => Console.WriteLine(e);
-            var result = launcher.LaunchMinecraft();
-            result.MCProcess.WaitForExit();*/
-            Optifine optifine = new Optifine();
-            var ilist = Optifine.GetOptifineVersionsFromVersion("1.16.5");
-            foreach(var item in ilist)
-            {
-                if(item.FileName == "OptiFine_1.16.5_HD_U_G8.jar")
-                {
-                    optifine.ProgressChanged += Optifine_ProgressChanged;
-                    optifine.InstallOptifine("C:\\MMCCTest.Minecraft", "1.16.5OptifineTest", item);
-                    break;
-                }
-            }
+                    JavawPath = "java",
+                    MaxMemory = 1100,
+                    MinMemory = 512
+                },
+            };
+            MinecraftLauncher launcher = new MinecraftLauncher(LaunchCore, account, settings);
+            //launcher.Minecraft_LogAdded += MinecraftLauncher_LogAdded;
+            //launcher.Minecraft_Exited += MinecraftLauncher_Exited;
+            launcher.LaunchMinecraft();
+
+        }
+
+        private static void Authenticator_ProgressChanged(object sender, (double, string) e)
+        {
+            Console.WriteLine($"Status:{(int)(e.Item1 * 100)}({e.Item2})");
         }
 
         private static void Optifine_ProgressChanged(object sender, (double, string) e)

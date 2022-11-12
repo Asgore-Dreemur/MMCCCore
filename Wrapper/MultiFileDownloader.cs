@@ -41,36 +41,12 @@ namespace MMCCCore.Wrapper
                 if (result.Result == DownloadResult.Error)
                 {
                     ErrorFile = result;
-                    if (needStop)
-                    {
-                        return;
-                    }
+                    if (needStop) return;
                     continue;
-                }
-                if (info.Sha1Vaildate)
-                {
-                    var vresult = OtherTools.VaildateSha1(info.DestPath, info.Sha1);
-                    if (!vresult.isSuccess)
-                    {
-                        result.ErrorException = new Exception("验证Sha1时出现问题", innerException:vresult.ErrorException);
-                        result.Result = DownloadResult.Error;
-                    }
-                    else
-                    {
-                        if (!vresult.isVaildated)
-                        {
-                            File.Delete(info.DestPath);
-                            result.ErrorException = new Exception($"下载{info.DestPath}时出现错误", new Exception($"sha1不匹配:给定sha1:{info.Sha1},文件sha1:{vresult.FileSha1}"));
-                            result.Result = DownloadResult.Error;
-                        }
-                    }
                 }
                 if (result.Result != DownloadResult.Error) DownloadedFile.Add(result);
                 lock (locker) OnProgressChanged(result);
-                if (needStop)
-                {
-                    return;
-                }
+                if (needStop) return;
             }
         }
         private void OnProgressChanged(DownloadResultModel result)

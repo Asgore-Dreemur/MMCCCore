@@ -162,7 +162,7 @@ namespace MMCCCore.Model.Core
         public GameAPIType APIType { get; set; }
         public GameVersionType VersionType { get; set; }
         public LocalMCVersionJsonModel VersionJson { get; set; }
-        public string GameDir { get; set; }
+        public string GameRootDir { get; set; }
     }
     public class MCLibraryInfo
     {

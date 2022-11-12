@@ -121,6 +121,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <None Include="README.md" />
     <None Include="Resources\forge-install-bootstrapper.jar" />
   </ItemGroup>
   <ItemGroup>

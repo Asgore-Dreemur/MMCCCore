@@ -8,7 +8,16 @@ using Newtonsoft.Json.Linq;
 
 namespace MMCCCore.Model.Authenticator
 {
-    class AuthTokenResponseModel
+    public class AuthErrorModel
+    {
+        [JsonProperty("error")]
+        public string Error { get; set; }
+        [JsonProperty("error_description")]
+        public string ErrorDescription { get; set; }
+        [JsonProperty("correlation_id")]
+        public string CorrelationId { get; set; }
+    }
+    public class AuthTokenResponseModel :AuthErrorModel
     {
         [JsonProperty("token_type")]
         public string TokenType { get; set; }
@@ -23,7 +32,7 @@ namespace MMCCCore.Model.Authenticator
         [JsonProperty("user_id")]
         public string Uuid { get; set; }
     }
-    class XBLAuthRequestModel
+    public class XBLAuthRequestModel
     {
         [JsonProperty("Properties")]
         public XBLAuthRequestProperitesModel Properites { get; set; } = new XBLAuthRequestProperitesModel();
@@ -32,7 +41,7 @@ namespace MMCCCore.Model.Authenticator
         [JsonProperty("TokenType")]
         public string TokenType { get; set; } = "JWT";
     }
-    class XBLAuthRequestProperitesModel
+    public class XBLAuthRequestProperitesModel
     {
         [JsonProperty("AuthMethod")]
         public string AuthMethod { get; set; } = "RPS";
@@ -43,7 +52,7 @@ namespace MMCCCore.Model.Authenticator
         [JsonProperty("RpsTicket")]
         public string RpsTicket { get; set; } = "d=<access token>";
     }
-    class XBLAuthResponseModel
+    public class XBLAuthResponseModel : AuthErrorModel
     {
         [JsonProperty("IssueInstant")]
         public string IssueInstant { get; set; }
@@ -57,7 +66,7 @@ namespace MMCCCore.Model.Authenticator
         [JsonProperty("DisplayClaims")]
         public DisplayClaimsModel DisplayClaims { get; set; }
     }
-    class DisplayClaimsModel
+    public class DisplayClaimsModel
     {
         [JsonProperty("xui")]
         public List<JObject> Xui { get; set; }
@@ -74,7 +83,7 @@ namespace MMCCCore.Model.Authenticator
         public string TokenType { get; set; } = "JWT";
     }
 
-    class XSTSAuthResponseModel
+    public class XSTSAuthResponseModel : XSTSAuthenticateErrorModel
     {
         [JsonProperty("IssueInstant")]
         public string IssueInstant { get; set; }
@@ -97,7 +106,7 @@ namespace MMCCCore.Model.Authenticator
         [JsonProperty("XErr")]
         public string XErr { get; set; }
 
-        [JsonProperty("Identity")]
+        [JsonProperty("Message")]
         public string Message { get; set; }
 
         [JsonProperty("Redirect")]
@@ -112,7 +121,7 @@ namespace MMCCCore.Model.Authenticator
         [JsonProperty("UserTokens")]
         public List<string> UserTokens { get; set; } = new List<string>();
     }
-    public class MicrosoftAuthResponse
+    public class MicrosoftAuthResponse : AuthErrorModel
     {
         [JsonProperty("id")]
         public string Id { get; set; }
@@ -126,7 +135,7 @@ namespace MMCCCore.Model.Authenticator
         [JsonProperty("capes")]
         public JArray Capes { get; set; }
     }
-    public class AccountGamesModel
+    public class AccountGamesModel : AuthErrorModel
     {
         [JsonProperty("items")]
         public List<AccountItemModel> Items { get; set; } = new List<AccountItemModel>();

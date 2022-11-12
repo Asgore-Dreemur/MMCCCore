@@ -16,13 +16,22 @@ namespace MMCCCore.Wrapper
         {
             try
             {
-                if (!File.Exists(FilePath)) return new HashVaildateResult { isSuccess = true, isVaildated = false };
+                if (!File.Exists(FilePath)) return new HashVaildateResult { 
+                    isSuccess = false,
+                    isVaildated = false,
+                    ErrorException = new Exception($"Sha1校验失败:给定的文件({FilePath})不存在")
+                };
                 HashAlgorithm algorithm = SHA1.Create();
                 FileStream fs = new FileStream(FilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
                 string SHA1Str = BitConverter.ToString(algorithm.ComputeHash(fs)).Replace("-", "").ToLower();
                 fs.Close();
-                if (SHA1Str != Sha1.ToLower()) return new HashVaildateResult { isSuccess = true, isVaildated = false, FileSha1 = SHA1Str };
-                return new HashVaildateResult { isSuccess = true, isVaildated = true, FileSha1 = SHA1Str };
+                if (SHA1Str != Sha1.ToLower()) return new HashVaildateResult { 
+                    isSuccess = true,
+                    isVaildated = false,
+                    FileSha1 = SHA1Str,
+                    ErrorException = new Exception($"Sha1校验失败:文件Sha1({SHA1Str})与给定Sha1({Sha1})不符")
+                };
+                return new HashVaildateResult { isVaildated = true, FileSha1 = SHA1Str, ErrorException = null };
             }
             catch(Exception e)
             {
