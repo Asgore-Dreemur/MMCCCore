@@ -89,6 +89,7 @@
     <Compile Include="Model\GameAssemblies\OptifineVersionModel.cs" />
     <Compile Include="Model\Core\MCCoreModel.cs" />
     <Compile Include="Model\Wrapper\FileDownloaderModels.cs" />
+    <Compile Include="Module\APIManager\DownloadAPIManager.cs" />
     <Compile Include="Module\Authenticator\MicrosoftAuthenticator.cs" />
     <Compile Include="Module\Authenticator\OfflineAuthenticator.cs" />
     <Compile Include="Module\Authenticator\YggdrasilAuthenticator.cs" />

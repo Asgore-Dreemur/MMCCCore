@@ -175,12 +175,6 @@ namespace MMCCCore.Model.Core
         public bool isNative { get; set; }
         public MCLibraryFileModel LibraryJson { get; set; }
     }
-    public enum GameSources
-    {
-        Bmclapi = 0,
-        Mcbbs = 1,
-        Vanilla = 2
-    }
     public enum GameVersionType
     {
         Release = 0,

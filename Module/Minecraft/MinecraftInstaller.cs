@@ -11,6 +11,7 @@ using MMCCCore.Wrapper;
 using MMCCCore.Model.Wrapper;
 using MMCCCore.Module.Minecraft;
 using MMCCCore.Model.MinecraftFiles;
+using MMCCCore.Module.APIManager;
 
 namespace MMCCCore.Module.Minecraft
 {
@@ -18,18 +19,16 @@ namespace MMCCCore.Module.Minecraft
     {
         private string GameDir;
         private MCVersionModel InstallInfo;
-        private GameSources DownloadSource;
         private string VersionName;
         private int MaxThreadCount;
-        public MinecraftInstaller(string GameDir, MCVersionModel InstallInfo, GameSources DownloadSource, string VersionName, int MaxThreadCount = 64)
+        public MinecraftInstaller(string GameDir, MCVersionModel InstallInfo, string VersionName, int MaxThreadCount = 64)
         {
             this.GameDir = GameDir;
             this.InstallInfo = InstallInfo;
-            this.DownloadSource = DownloadSource;
             this.VersionName = VersionName;
             this.MaxThreadCount = MaxThreadCount;
         }
-        public InstallerReponse InstallMinecraft(bool SkipDownloadedFile = true)
+        public InstallerReponse InstallMinecraft(bool isSkipDownloadedFile = true)
         {
             WebClient WebClient = new WebClient();
             if (CoreWrapper.IsExistsVersion(GameDir, VersionName) || string.IsNullOrWhiteSpace(VersionName)) return new InstallerReponse { Exception = new Exception("不能和现有版本重名或留空"), isSuccess = false };
@@ -40,14 +39,15 @@ namespace MMCCCore.Module.Minecraft
             string NativesPath = Path.Combine(GameDir, "versions", VersionName, "natives");
             try
             {
+                if (DownloadAPIManager.Current == null) throw new Exception("未知的下载源");
                 OtherTools.CreateDir(LibrariesPath);
                 OtherTools.CreateDir(AssetsObjectPath);
                 OtherTools.CreateDir(AssetIndexPath);
                 OtherTools.CreateDir(VersionPath);
                 OtherTools.CreateDir(NativesPath);
                 OnProgressChanged(0.10, "下载版本Json");
-                string VersionJsonStr = WebClient.DownloadString(DownloadSource == GameSources.Bmclapi ? $"https://bmclapi2.bangbang93.com/version/{InstallInfo.Id}/json"
-                    : DownloadSource == GameSources.Mcbbs ? $"https://download.mcbbs.net/version/{InstallInfo.Id}/json"
+                string VersionJsonStr = WebClient.DownloadString(
+                    DownloadAPIManager.Current.CoreJson != null ? DownloadAPIManager.Current.CoreJson.Replace("<version>", InstallInfo.Id)
                     : InstallInfo.JsonUrl);
                 string JsonPath = Path.Combine(VersionPath, VersionName + ".json");
                 string JarPath = Path.Combine(VersionPath, VersionName + ".jar");
@@ -58,8 +58,7 @@ namespace MMCCCore.Module.Minecraft
                 FileDownloader downloader = new FileDownloader(new DownloadTaskInfo
                 {
                     DestPath = JarPath,
-                    DownloadUrl = DownloadSource == GameSources.Bmclapi ? $"https://bmclapi2.bangbang93.com/version/{InstallInfo.Id}/client"
-                    : DownloadSource == GameSources.Mcbbs ? $"https://download.mcbbs.net/version/{InstallInfo.Id}/client"
+                    DownloadUrl = DownloadAPIManager.Current.CoreJar != null ? DownloadAPIManager.Current.CoreJar.Replace("<version>", VersionInfo.Id)
                     : VersionInfo.Downloads.Client.Url,
                     MaxTryCount = 4
                 });
@@ -69,7 +68,7 @@ namespace MMCCCore.Module.Minecraft
                 MCLibrary library = new MCLibrary();
                 OnProgressChanged(0.00, "下载支持库");
                 library.ProgressChanged += (_e, status) => OnProgressChanged(status.Item1, "下载支持库");
-                var result = library.DownloadLibraries(VersionInfo, GameDir, DownloadSource, SkipDownloadedFile, MaxThreadCount);
+                var result = library.DownloadLibraries(VersionInfo, GameDir, isSkipDownloadedFile, MaxThreadCount);
                 if(result.DownloadResult == MinecraftFilesDownloadResult.Error)
                 {
                     throw result.ErrorException;
@@ -79,22 +78,21 @@ namespace MMCCCore.Module.Minecraft
                 string VersionAssetIndexPath = Path.Combine(AssetIndexPath, VersionInfo.AssetIndex.Id + ".json");
                 var vresult = OtherTools.VaildateSha1(VersionAssetIndexPath, VersionInfo.AssetIndex.Sha1);
                 if (!vresult.isSuccess) throw vresult.ErrorException;
-                if (vresult.isVaildated && SkipDownloadedFile)
+                if (vresult.isVaildated && isSkipDownloadedFile)
                 {
                     AssetsIndexStr = new StreamReader(new FileStream(VersionAssetIndexPath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite)).ReadToEnd();
                 }
                 else
                 {
                     AssetsIndexStr = WebClient.DownloadString(
-                        DownloadSource == GameSources.Bmclapi ? VersionInfo.AssetIndex.Url.Replace("launchermeta.mojang.com", "bmclapi2.bangbang93.com")
-                        : DownloadSource == GameSources.Mcbbs ? VersionInfo.AssetIndex.Url.Replace("launchermeta.mojang.com", "download.mcbbs.net")
+                        DownloadAPIManager.Current.AssetIndex != null ? VersionInfo.AssetIndex.Url.Replace("launchermeta.mojang.com", DownloadAPIManager.Current.AssetIndex)
                         : VersionInfo.AssetIndex.Url);
                     File.WriteAllText(VersionAssetIndexPath, AssetsIndexStr);
                 }
                 OnProgressChanged(0.00, "下载资源文件");
                 MCAssets assets = new MCAssets();
                 assets.ProgressChanged += (_e, status)=> OnProgressChanged(status.Item1, "下载资源文件");
-                result = assets.DownloadAssets(AssetsIndexStr, GameDir, DownloadSource, SkipDownloadedFile, MaxThreadCount);
+                result = assets.DownloadAssets(AssetsIndexStr, GameDir, isSkipDownloadedFile, MaxThreadCount);
                 if(result.DownloadResult == MinecraftFilesDownloadResult.Error)
                 {
                     throw result.ErrorException;

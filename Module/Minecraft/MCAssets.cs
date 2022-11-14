@@ -12,16 +12,18 @@ using MMCCCore.Model.Core;
 using MMCCCore.Model.Wrapper;
 using System.Threading;
 using MMCCCore.Model.MinecraftFiles;
+using MMCCCore.Module.APIManager;
 
 namespace MMCCCore.Module.Minecraft
 {
     public class MCAssets : InstallerModel
     {
         private MultiFileDownloader downloader;
-        public MinecraftFilesDownloadInfo DownloadAssets(string AssetIndexJson, string GameDir, GameSources DownloadSource, bool isSkipDownloadedFile, int MaxThreadCount = 128)
+        public MinecraftFilesDownloadInfo DownloadAssets(string AssetIndexJson, string GameDir, bool isSkipDownloadedFile, int MaxThreadCount = 128)
         {
             try
             {
+                if (DownloadAPIManager.Current == null) throw new Exception("未知的下载源");
                 Stack<DownloadTaskInfo> DownloadStack = new Stack<DownloadTaskInfo>();
                 JObject AssetIndexInfo = JObject.Parse(AssetIndexJson);
                 Dictionary<string, JObject> AssetsDict = AssetIndexInfo["objects"].ToObject<Dictionary<string, JObject>>();
@@ -30,10 +32,8 @@ namespace MMCCCore.Module.Minecraft
                     string AssetPath = Path.Combine(GameDir, "assets\\objects", AssetInfo["hash"].ToString().Substring(0, 2));
                     OtherTools.CreateDir(AssetPath);
                     AssetPath = Path.Combine(AssetPath, AssetInfo["hash"].ToString());
-                    string DownloadRoot = DownloadSource == GameSources.Bmclapi ? "https://bmclapi2.bangbang93.com/assets/"
-                        : DownloadSource == GameSources.Mcbbs ? "https://download.mcbbs.net/assets/"
-                        : "http://resources.download.minecraft.net/";
-                    DownloadStack.Push(new DownloadTaskInfo { DownloadUrl = $"{DownloadRoot}{AssetInfo["hash"].ToString().Substring(0, 2)}/{AssetInfo["hash"].ToString()}",
+                    string DownloadRoot = DownloadAPIManager.Current.Assets.TrimEnd('/');
+                    DownloadStack.Push(new DownloadTaskInfo { DownloadUrl = $"{DownloadRoot}/{AssetInfo["hash"].ToString().Substring(0, 2)}/{AssetInfo["hash"].ToString()}",
                         DestPath = AssetPath,
                         MaxTryCount = 4,
                         Sha1 = AssetInfo["hash"].ToString(),

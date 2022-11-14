@@ -12,15 +12,17 @@ using System.Threading;
 using MMCCCore.Model.MinecraftFiles;
 using System.IO.Compression;
 using System.Net;
+using MMCCCore.Module.APIManager;
 
 namespace MMCCCore.Module.Minecraft
 {
     public class MCLibrary : InstallerModel
     {
-        public MinecraftFilesDownloadInfo DownloadLibraries(LocalMCVersionJsonModel GameInfo, string GameDir, GameSources DownloadSource, bool isSkipDownloadedFile , int MaxThreadCount = 128)
+        public MinecraftFilesDownloadInfo DownloadLibraries(LocalMCVersionJsonModel GameInfo, string GameDir, bool isSkipDownloadedFile , int MaxThreadCount = 128)
         {
             try
             {
+                if (DownloadAPIManager.Current == null) throw new Exception("未知的下载源");
                 Stack<DownloadTaskInfo> DownloadStack = new Stack<DownloadTaskInfo>();
                 var AllLibraries = GetAllLibraries(GameInfo);
                 foreach (MCLibraryInfo LibraryInfo in AllLibraries)
@@ -30,7 +32,7 @@ namespace MMCCCore.Module.Minecraft
                         string LibraryPath = Path.Combine(GameDir, "libraries", LibraryInfo.Path.Replace('/', '\\'));
                         //if (OtherTools.VaildateSha1(LibraryPath, LibraryInfo.CheckSum)) continue;
                         OtherTools.CreateDir(LibraryPath.Substring(0, LibraryPath.LastIndexOf('\\')));
-                        var DownloadInfo = new DownloadTaskInfo { DownloadUrl = GetLibrariesDownloadAddr(LibraryInfo, DownloadSource),
+                        var DownloadInfo = new DownloadTaskInfo { DownloadUrl = DownloadAPIManager.Current.Libraries.TrimEnd('/') + $"/{LibraryInfo.Path}",
                             DestPath = LibraryPath,
                             MaxTryCount = 4,
                             Sha1Vaildate = true,
@@ -223,20 +225,6 @@ namespace MMCCCore.Module.Minecraft
         {
             if (model.Natives.ContainsKey(OtherTools.GetSystemPlatformName())) return true;
             return false;
-        }
-        private string GetLibrariesDownloadAddr(MCLibraryInfo info, GameSources sources)
-        {
-            switch (sources)
-            {
-                case GameSources.Bmclapi:
-                    return info.Url.Replace("https://libraries.minecraft.net/", "https://bmclapi2.bangbang93.com/maven/");
-                case GameSources.Mcbbs:
-                    return info.Url.Replace("https://libraries.minecraft.net/", "https://download.mcbbs.net/maven/");
-                case GameSources.Vanilla:
-                    return info.Url;
-                default:
-                    return info.Url;
-            }
         }
     }
 }

@@ -8,15 +8,17 @@ using System.Net;
 using Newtonsoft.Json;
 using System.IO;
 using Newtonsoft.Json.Linq;
+using MMCCCore.Module.APIManager;
 
 namespace MMCCCore.Wrapper
 {
     public class CoreWrapper
     {
         private static WebClient WebClient = new WebClient();
-        public static MCVersionListModel GetMCVersions(GameSources GetSource)
+        public static MCVersionListModel GetMCVersions()
         {
-            string GetAddr = GetSource == GameSources.Bmclapi ? "https://bmclapi2.bangbang93.com/mc/game/version_manifest_v2.json" : GetSource == GameSources.Mcbbs ? "https://download.mcbbs.net/mc/game/version_manifest_v2.json" : "http://launchermeta.mojang.com/mc/game/version_manifest_v2.json";
+            if (DownloadAPIManager.Current == null) throw new Exception("未知的下载源");
+            string GetAddr = DownloadAPIManager.Current.VersionManifest;
             string ResStr = WebClient.DownloadString(GetAddr);
             return JsonConvert.DeserializeObject<MCVersionListModel>(ResStr);
         }
@@ -37,7 +39,7 @@ namespace MMCCCore.Wrapper
                     VersionInfo.VersionJson = MCVersionInfo;
                     VersionInfo.Id = MCVersionInfo.Id;
                     VersionInfo.Time = DateTime.Parse(MCVersionInfo.Time);
-                    VersionInfo.GameDir = GameDir;
+                    VersionInfo.GameRootDir = GameDir;
                     switch (MCVersionInfo.Type)
                     {
                         case "release":
@@ -92,7 +94,7 @@ namespace MMCCCore.Wrapper
                             MCVersionList.Add(VersionInfo);
                             break;
                         }
-                        else if (LibraryInfo.Name.StartsWith("net.fabricmc"))
+                        else if (LibraryInfo.Name.Contains("net.fabricmc"))
                         {
                             VersionInfo.APIType = GameAPIType.Fabric;
                             MCVersionList.Add(VersionInfo);
@@ -137,7 +139,7 @@ namespace MMCCCore.Wrapper
                         VersionInfo.VersionJson = MCVersionInfo;
                         VersionInfo.Id = MCVersionInfo.Id;
                         VersionInfo.Time = DateTime.Parse(MCVersionInfo.Time);
-                        VersionInfo.GameDir = GameDir;
+                        VersionInfo.GameRootDir = GameDir;
                         return VersionInfo;
                     }
                 }

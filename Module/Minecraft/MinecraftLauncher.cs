@@ -29,9 +29,10 @@ namespace MMCCCore.Module.Launcher
         {
             try
             {
-                string LibrariesDir = Path.Combine(LaunchCore.GameDir, "libraries");
-                string AssetPath = Path.Combine(LaunchCore.GameDir, "assets");
-                if (!Directory.Exists(LibrariesDir) || !Directory.Exists(AssetPath)) return new MCLaunchResponse()
+                string LibrariesDir = Path.Combine(LaunchCore.GameRootDir, "libraries");
+                string AssetPath = Path.Combine(LaunchCore.GameRootDir, "assets");
+                if (!Directory.Exists(LibrariesDir) ||
+                    !Directory.Exists(AssetPath)) return new MCLaunchResponse()
                 {
                     LaunchResult = LaunchStatus.Error,
                     LaunchAccount = LaunchAccount,
@@ -82,7 +83,7 @@ namespace MMCCCore.Module.Launcher
         }
         private List<string> GetLibraries()
         {
-            string LibrariesPath = Path.Combine(LaunchCore.GameDir, "libraries");
+            string LibrariesPath = Path.Combine(LaunchCore.GameRootDir, "libraries");
             List<string> GameLibraries = new List<string>();
             foreach (MCLibraryInfo LibraryInfo in MCLibrary.GetAllLibraries(LaunchCore.VersionJson))
             {
@@ -90,8 +91,8 @@ namespace MMCCCore.Module.Launcher
                 if (!LibraryInfo.isNative) GameLibraries.Add(Path.Combine(LibrariesPath, LibraryInfo.Path.Replace('/', '\\')));
             }
             GameLibraries.Add(LaunchCore.VersionJson.InheritsFrom == null
-                ? Path.Combine(LaunchCore.GameDir, "versions", LaunchCore.Id, LaunchCore.Id + ".jar")
-                : Path.Combine(LaunchCore.GameDir, "versions", LaunchCore.VersionJson.InheritsFrom, LaunchCore.VersionJson.InheritsFrom + ".jar"));
+                ? Path.Combine(LaunchCore.GameRootDir, "versions", LaunchCore.Id, LaunchCore.Id + ".jar")
+                : Path.Combine(LaunchCore.GameRootDir, "versions", LaunchCore.VersionJson.InheritsFrom, LaunchCore.VersionJson.InheritsFrom + ".jar"));
             return GameLibraries;
         }
         private string BuildArguments()
@@ -102,7 +103,7 @@ namespace MMCCCore.Module.Launcher
         {
             Dictionary<string, string> LaunchJvmArguments = new Dictionary<string, string>()
             {
-                {"${natives_directory}", "\"" + Path.Combine(LaunchCore.GameDir, "versions", LaunchCore.Id, "natives") + "\"" },
+                {"${natives_directory}", "\"" + Path.Combine(LaunchCore.GameRootDir, "versions", LaunchCore.Id, "natives") + "\"" },
                 {"${launcher_name}", "MMCCCore" },
                 {"${launcher_version}", "1" },
                 {"${classpath}", "\"" + string.Join(";", GetLibraries()) + "\"" }
@@ -150,8 +151,8 @@ namespace MMCCCore.Module.Launcher
                     string.IsNullOrEmpty(LaunchCore.VersionJson.InheritsFrom) ? LaunchCore.Id
                     : LaunchCore.VersionJson.InheritsFrom
                 },
-                {"${game_directory}", "\"" + LaunchCore.GameDir  + "\""},
-                {"${assets_root}", "\"" + Path.Combine(LaunchCore.GameDir, "assets") + "\"" },
+                {"${game_directory}", "\"" + LaunchCore.GameRootDir  + "\""},
+                {"${assets_root}", "\"" + Path.Combine(LaunchCore.GameRootDir, "assets") + "\"" },
                 {"${assets_index_name}", LaunchCore.VersionJson.AssetIndex.Id },
                 {"${auth_uuid}", LaunchAccount.Uuid.ToString("N") },
                 {"${auth_access_token}", LaunchAccount.AccessToken },
