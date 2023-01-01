@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
-namespace MMCCCore.Model.Assemblies
+namespace MMCCCore.Model.GameAssemblies
 {
     public class LiteLoaderVersionModel
     {

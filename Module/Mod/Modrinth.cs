@@ -30,6 +30,7 @@ namespace MMCCCore.Module.Mod
             string ResStr = WebClient.DownloadString(SearchUrl);
             return JsonConvert.DeserializeObject<ModrinthModModel>(ResStr);
         }
+        
         public ModrinthModVersionsModel GetModVersions(string slug)
         {
             string ResStr = WebClient.DownloadString($"https://mcim.z0z0r4.top/modrinth/project/{slug}/versions");

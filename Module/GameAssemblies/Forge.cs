@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using MMCCCore.Model.Assemblies;
+using MMCCCore.Model.GameAssemblies;
 using System.Net;
 using Newtonsoft.Json;
 using System.IO;
@@ -38,10 +38,11 @@ namespace MMCCCore.Module.GameAssemblies
             List<string> ForgeVersionList = JsonConvert.DeserializeObject<List<string>>(VersionStr);
             return ForgeVersionList;
         }
-        public InstallerReponse InstallForge(ForgeVersionModel InstallInfo, string GameDir, string VersionName, int MaxThreadCount = 64)
+        public InstallerReponse InstallForge(ForgeVersionModel InstallInfo, string GameDir, string VersionName, string JavaPath, int MaxThreadCount = 64)
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(VersionName) || CoreWrapper.IsExistsVersion(GameDir, VersionName)) throw new Exception("版本名不可重名或留空");
                 string ForgePath = Path.Combine(Path.GetTempPath(), "forge.jar");
                 string ForgeInstallerPath = Path.Combine(Path.GetTempPath(), "forge-installer-bootstapper.jar");
                 File.WriteAllBytes(ForgeInstallerPath, InstallerResources.forge_install_bootstrapper);
@@ -96,7 +97,7 @@ namespace MMCCCore.Module.GameAssemblies
                     });
                 }
                 MultiFileDownloader mdownloader = new MultiFileDownloader(DownloadStack, 64);
-                mdownloader.ProgressChanged += (_, e) => OnProgressChanged((double)Math.Round((decimal)e.Item1 / e.Item2, 2), "下载支持库");
+                mdownloader.ProgressChanged += Mdownloader_ProgressChanged;
                 mdownloader.StartDownload();
                 mdownloader.WaitDownloadComplete();
                 OnProgressChanged(-1, "安装forge...");
@@ -104,9 +105,9 @@ namespace MMCCCore.Module.GameAssemblies
                 {
                     StartInfo = new ProcessStartInfo()
                     {
-                        CreateNoWindow = true,
+                        CreateNoWindow = false,
                         UseShellExecute = false,
-                        FileName = "java",
+                        FileName = JavaPath,
                         Arguments = $"-cp \"{ForgeInstallerPath};{ForgePath}\" com.bangbang93.ForgeInstaller \"{GameDir}\""
                     }
                 };
@@ -120,6 +121,18 @@ namespace MMCCCore.Module.GameAssemblies
                 return new InstallerReponse { isSuccess = false, Exception = e };
             }
         }
+
+        private void Mdownloader_ProgressChanged(object sender, (int, int, DownloadResultModel) e)
+        {
+            if (e.Item3.Result == DownloadResult.Error)
+            {
+                ((MultiFileDownloader)sender).StopDownload();
+                throw new Exception($"下载{e.Item3.DownloadInfo.DownloadUrl}时出现错误:{e.Item3.ErrorException.Message}");
+            }
+            double DownloadedProgress = (double)Math.Round((decimal)e.Item1 / e.Item2, 2);
+            OnProgressChanged(DownloadedProgress, "下载支持库");
+        }
+
         public InstallerReponse InstallLowerForge(ForgeVersionModel InstallInfo, string GameDir, string VersionName, string ForgePath)
         {
             try

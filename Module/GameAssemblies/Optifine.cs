@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using MMCCCore.Model.Assemblies;
+using MMCCCore.Model.GameAssemblies;
 using System.Net;
 using Newtonsoft.Json;
 using MMCCCore.Wrapper;
@@ -33,10 +33,11 @@ namespace MMCCCore.Module.GameAssemblies
             return OptifineList;
         }
         public static string GetOptifineDownloadUrl(OptifineVersionModel model) => $"https://bmclapi2.bangbang93.com/optifine/{model.MCVersion}/{model.Type}/{model.Patch}";
-        public InstallerReponse InstallOptifine(string GameDir, string VersionName, OptifineVersionModel InstallInfo)
+        public InstallerReponse InstallOptifine(string GameDir, string VersionName, OptifineVersionModel InstallInfo, string JavaPath)
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(VersionName) || CoreWrapper.IsExistsVersion(GameDir, VersionName)) throw new Exception("版本名不可重名或留空");
                 Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "MMCC"));
                 string OptifinePath = Path.Combine(Path.GetTempPath(), "MMCC", "optifine.jar");
                 string OptifineInstallPath = Path.Combine(Path.GetTempPath(), "optifine-installer.jar");
@@ -59,7 +60,7 @@ namespace MMCCCore.Module.GameAssemblies
                     {
                         CreateNoWindow = true,
                         UseShellExecute = false,
-                        FileName = "java",
+                        FileName = JavaPath,
                         Arguments = $"-cp \"{OptifinePath};{OptifineInstallPath}\" net.stevexmh.OptifineInstaller \"{GameDir}\" \"{VersionName}\""
                     }
                 };

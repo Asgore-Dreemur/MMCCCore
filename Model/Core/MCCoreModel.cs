@@ -16,6 +16,7 @@ namespace MMCCCore.Model.Core
         [JsonProperty("versions")]
         public List<MCVersionModel> AllVersions { get; set; }
     }
+
     public class MCVersionModel
     {
         [JsonProperty("id")]
@@ -28,6 +29,7 @@ namespace MMCCCore.Model.Core
         public string JsonUrl { get; set; }
         
     }
+
     public class MCLatestVersionModel
     {
         [JsonProperty("release")]
@@ -35,6 +37,7 @@ namespace MMCCCore.Model.Core
         [JsonProperty("snapshot")]
         public string SnapshotVersion { get; set; }
     }
+
     public class LocalMCVersionJsonModel
     {
         [JsonProperty("id")]
@@ -47,9 +50,9 @@ namespace MMCCCore.Model.Core
         public int MinimumLauncherVersion { get; set; }
         [JsonProperty("releaseTime")]
         public string ReleaseTime { get; set; }
-        [JsonProperty("time")]
+        [JsonProperty("time", NullValueHandling = NullValueHandling.Ignore)]
         public string Time { get; set; }
-        [JsonProperty("libraries")]
+        [JsonProperty("libraries", NullValueHandling = NullValueHandling.Ignore)]
         public List<MCLibraryFileModel> Libraries { get; set; } = new List<MCLibraryFileModel>();
         [JsonProperty("inheritsFrom", NullValueHandling = NullValueHandling.Ignore)]
         public string InheritsFrom { get; set; }
@@ -61,12 +64,16 @@ namespace MMCCCore.Model.Core
         public GameAssetsIndexModel AssetIndex { get; set; }
         [JsonProperty("minecraftArguments", NullValueHandling = NullValueHandling.Ignore)]
         public string MinecraftArguments { get; set; }
+        [JsonProperty("clientVersion", NullValueHandling = NullValueHandling.Ignore)]
+        public string ClientVersion { get; set; }
     }
+
     public class GameDownloadsModel
     {
         [JsonProperty("client")]
         public GameDownloadClientModel Client { get; set; }
     }
+
     public class GameDownloadClientModel
     {
         [JsonProperty("sha1")]
@@ -76,39 +83,42 @@ namespace MMCCCore.Model.Core
         [JsonProperty("url")]
         public string Url { get; set; }
     }
+
     public class MCLibraryFileModel
     {
-        [JsonProperty("downloads")]
+        [JsonProperty("downloads", NullValueHandling = NullValueHandling.Ignore)]
         public GameLibraryDownloadModel Downloads { get; set; }
 
-        [JsonProperty("name")]
+        [JsonProperty("name", NullValueHandling = NullValueHandling.Ignore)]
         public string Name { get; set; }
-        [JsonProperty("url")]
+        [JsonProperty("url", NullValueHandling = NullValueHandling.Ignore)]
         public string Url { get; set; }
 
-        [JsonProperty("natives")]
+        [JsonProperty("natives", NullValueHandling = NullValueHandling.Ignore)]
         public Dictionary<string, string> Natives { get; set; }
 
-        [JsonProperty("rules")]
+        [JsonProperty("rules", NullValueHandling = NullValueHandling.Ignore)]
         public IEnumerable<LibraryRules> Rules { get; set; }
-        [JsonProperty("checksums")]
+        [JsonProperty("checksums", NullValueHandling = NullValueHandling.Ignore)]
         public List<string> CheckSums { get; set; }
-        [JsonProperty("clientreq")]
+        [JsonProperty("clientreq", NullValueHandling = NullValueHandling.Ignore)]
         public bool? ClientReq { get; set; }
     }
+
     public class MCFileModel
     {
-        [JsonProperty("path")]
+        [JsonProperty("path", NullValueHandling = NullValueHandling.Ignore)]
         public string Path { get; set; }
-        [JsonProperty("sha1")]
+        [JsonProperty("sha1", NullValueHandling = NullValueHandling.Ignore)]
         public string Sha1 { get; set; }
-        [JsonProperty("size")]
+        [JsonProperty("size", NullValueHandling = NullValueHandling.Ignore)]
         public int Size { get; set; }
-        [JsonProperty("url")]
+        [JsonProperty("url", NullValueHandling = NullValueHandling.Ignore)]
         public string Url { get; set; }
-        [JsonProperty("id")]
+        [JsonProperty("id", NullValueHandling = NullValueHandling.Ignore)]
         public string Id { get; set; }
     }
+
     public class LibraryRules
     {
         [JsonProperty("action", NullValueHandling = NullValueHandling.Ignore)]
@@ -116,38 +126,30 @@ namespace MMCCCore.Model.Core
         [JsonProperty("os", NullValueHandling = NullValueHandling.Ignore)]
         public Dictionary<string, string> Os { get; set; }
     }
+
     public class GameLibraryDownloadModel
     {
-        [JsonProperty("artifact")]
+        [JsonProperty("artifact", NullValueHandling = NullValueHandling.Ignore)]
         public MCFileModel Artifact { get; set; }
 
-        [JsonProperty("classifiers")]
+        [JsonProperty("classifiers", NullValueHandling = NullValueHandling.Ignore)]
         public Dictionary<string, MCFileModel> Classifiers { get; set; }
     }
-    public class GameLibraryArtifactModel
-    {
-        [JsonProperty("path")]
-        public string Path { get; set; }
-        [JsonProperty("sha1")]
-        public string Sha1 { get; set; }
-        [JsonProperty("size")]
-        public int FileSize { get; set; }
-        [JsonProperty("url")]
-        public string Url { get; set; }
-    }
+
     public class GameAssetsIndexModel
     {
-        [JsonProperty("id")]
+        [JsonProperty("id", NullValueHandling = NullValueHandling.Ignore)]
         public string Id { get; set; }
-        [JsonProperty("sha1")]
+        [JsonProperty("sha1", NullValueHandling = NullValueHandling.Ignore)]
         public string Sha1 { get; set; }
-        [JsonProperty("size")]
+        [JsonProperty("size", NullValueHandling = NullValueHandling.Ignore)]
         public int Size { get; set; }
-        [JsonProperty("totalSize")]
+        [JsonProperty("totalSize", NullValueHandling = NullValueHandling.Ignore)]
         public int TotalSize { get; set; }
-        [JsonProperty("url")]
+        [JsonProperty("url", NullValueHandling = NullValueHandling.Ignore)]
         public string Url { get; set; }
     }
+
     public class GameArgumentsModel
     {
         [JsonProperty("game")]
@@ -155,6 +157,7 @@ namespace MMCCCore.Model.Core
         [JsonProperty("jvm")]
         public List<JToken> Jvm { get; set; } = new List<JToken>();
     }
+
     public class LocalGameInfoModel
     {
         public string Id { get; set; }
@@ -164,6 +167,7 @@ namespace MMCCCore.Model.Core
         public LocalMCVersionJsonModel VersionJson { get; set; }
         public string GameRootDir { get; set; }
     }
+
     public class MCLibraryInfo
     {
         public string Path { get; set; }
@@ -175,6 +179,7 @@ namespace MMCCCore.Model.Core
         public bool isNative { get; set; }
         public MCLibraryFileModel LibraryJson { get; set; }
     }
+
     public enum GameVersionType
     {
         Release = 0,
@@ -182,12 +187,14 @@ namespace MMCCCore.Model.Core
         Beta = 2,
         Alpha = 3
     }
+
     public enum GameAPIType
     {
-        Vanilla = 0,
-        Optifine = 1,
-        Forge = 2,
-        Fabric = 3,
-        LiteLoader = 4
+        None = 0,
+        Vanilla = 1,
+        Optifine = 2,
+        Forge = 3,
+        Fabric = 4,
+        LiteLoader = 5
     }
 }

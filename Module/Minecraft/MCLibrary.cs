@@ -46,7 +46,8 @@ namespace MMCCCore.Module.Minecraft
                 {
                     if(e.Item3.Result == DownloadResult.Error)
                     {
-                        downloader.needStop = true;
+                        downloader.StopDownload();
+                        throw new Exception($"下载{e.Item3.DownloadInfo.DownloadUrl}时出现错误:{e.Item3.ErrorException.Message}");
                     }
                     double DownloadedProgress = (double)Math.Round((decimal)e.Item1 / e.Item2, 2);
                     OnProgressChanged(DownloadedProgress, "下载支持库");
@@ -75,11 +76,12 @@ namespace MMCCCore.Module.Minecraft
                                 }
                                 string FileSha1 = new StreamReader(entry.Open()).ReadToEnd();
                                 var vresult = OtherTools.VaildateSha1(CNativePath, FileSha1);
-                                if (!vresult.isSuccess) throw vresult.ErrorException;
                                 if (!vresult.isVaildated)
                                 {
                                     if (File.Exists(CNativePath)) File.Delete(CNativePath);
                                     file.ExtractToFile(CNativePath);
+                                    vresult = OtherTools.VaildateSha1(CNativePath, FileSha1);
+                                    if (vresult.ErrorException != null) throw vresult.ErrorException;
                                 }
                             }
                         }
@@ -99,6 +101,16 @@ namespace MMCCCore.Module.Minecraft
                 };
             }
         }
+
+        public static string GetMavenFilePathFromName(string Name)
+        {
+            var SplitArray = Name.Split(':');
+            string NamespacePath = SplitArray[0].Replace('.', '/');
+            string PackageName = SplitArray[1];
+            string PackageVersion = SplitArray[2];
+            return $"{NamespacePath}/{PackageName}/{PackageVersion}/{PackageName}-{PackageVersion}.jar";
+        }
+
         public static List<MCLibraryInfo> GetAllLibraries(LocalMCVersionJsonModel GameInfo)
         {
             List<MCLibraryInfo> LibrariesList = new List<MCLibraryInfo>();
@@ -115,6 +127,14 @@ namespace MMCCCore.Module.Minecraft
                     Path = model.Downloads?.Artifact?.Path ?? string.Empty,
                     CheckSum = model.Downloads?.Artifact?.Sha1 ?? string.Empty
                 };
+                if(model.Downloads == null)
+                {
+                    if (model.Name == null) continue;
+                    info.Url = DownloadAPIManager.Current.Libraries.TrimEnd('/') + $"/{GetMavenFilePathFromName(model.Name)}";
+                    info.Path = GetMavenFilePathFromName(model.Name);
+                    LibrariesList.Add(info);
+                    continue;
+                }
                 if (model.Downloads.Classifiers != null)
                 {
                     info.isNative = true;

@@ -16,6 +16,7 @@ namespace MMCCCore.Wrapper
         {
             try
             {
+                Sha1 = Sha1.Trim('\n').Trim('\r').Trim();
                 if (!File.Exists(FilePath)) return new HashVaildateResult { 
                     isSuccess = false,
                     isVaildated = false,
@@ -29,9 +30,9 @@ namespace MMCCCore.Wrapper
                     isSuccess = true,
                     isVaildated = false,
                     FileSha1 = SHA1Str,
-                    ErrorException = new Exception($"Sha1校验失败:文件Sha1({SHA1Str})与给定Sha1({Sha1})不符")
+                    ErrorException = new Exception($"Sha1校验失败:文件Sha1(\"{SHA1Str}\")与给定Sha1(\"{Sha1}\")不符")
                 };
-                return new HashVaildateResult { isVaildated = true, FileSha1 = SHA1Str, ErrorException = null };
+                return new HashVaildateResult { isVaildated = true, FileSha1 = SHA1Str, ErrorException = null, isSuccess = true };
             }
             catch(Exception e)
             {
@@ -65,7 +66,8 @@ namespace MMCCCore.Wrapper
         {
             while(ThreadQueue.Count > 0)
             {
-                if (ThreadQueue.Peek().ThreadState != ThreadState.Running) ThreadQueue.Dequeue();
+                if (ThreadQueue.Peek().ThreadState == ThreadState.Aborted
+                    || ThreadQueue.Peek().ThreadState == ThreadState.Stopped) ThreadQueue.Dequeue();
             }
         }
         public static void WaitAllTaskExit(List<Task> TaskList)

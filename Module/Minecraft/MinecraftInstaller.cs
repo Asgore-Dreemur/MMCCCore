@@ -77,7 +77,6 @@ namespace MMCCCore.Module.Minecraft
                 string AssetsIndexStr = "";
                 string VersionAssetIndexPath = Path.Combine(AssetIndexPath, VersionInfo.AssetIndex.Id + ".json");
                 var vresult = OtherTools.VaildateSha1(VersionAssetIndexPath, VersionInfo.AssetIndex.Sha1);
-                if (!vresult.isSuccess) throw vresult.ErrorException;
                 if (vresult.isVaildated && isSkipDownloadedFile)
                 {
                     AssetsIndexStr = new StreamReader(new FileStream(VersionAssetIndexPath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite)).ReadToEnd();

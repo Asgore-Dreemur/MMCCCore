@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MMCCCore.Wrapper;
-using MMCCCore.Model.Assemblies;
+using MMCCCore.Model.GameAssemblies;
 using System.Net;
 using Newtonsoft.Json;
 using MMCCCore.Model.Core;
@@ -32,6 +32,7 @@ namespace MMCCCore.Module.GameAssemblies
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(VersionName) || CoreWrapper.IsExistsVersion(GameDir, VersionName)) throw new Exception("版本名不可重名或留空");
                 LocalMCVersionJsonModel VersionInfo = JsonConvert.DeserializeObject<LocalMCVersionJsonModel>(VanillaJson);
                 if (!CoreWrapper.IsExistsVersion(GameDir, VersionInfo.Id)) throw new Exception("找不到原版核心");
                 string VersionPath = Path.Combine(new string[] { GameDir, "versions", VersionName });

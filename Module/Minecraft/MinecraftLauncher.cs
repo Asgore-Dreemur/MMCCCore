@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using MMCCCore.Module.Minecraft;
 using MMCCCore.Wrapper;
+using Newtonsoft.Json;
 
 namespace MMCCCore.Module.Launcher
 {
@@ -25,10 +26,12 @@ namespace MMCCCore.Module.Launcher
             this.LaunchCore = LauncherCore;
             this.LaunchSetting = LauncherSetting;
         }
+
         public MCLaunchResponse LaunchMinecraft()
         {
             try
             {
+                Console.WriteLine(BuildArguments() + "\r\n\r\n\r\n");
                 string LibrariesDir = Path.Combine(LaunchCore.GameRootDir, "libraries");
                 string AssetPath = Path.Combine(LaunchCore.GameRootDir, "assets");
                 if (!Directory.Exists(LibrariesDir) ||
@@ -95,15 +98,23 @@ namespace MMCCCore.Module.Launcher
                 : Path.Combine(LaunchCore.GameRootDir, "versions", LaunchCore.VersionJson.InheritsFrom, LaunchCore.VersionJson.InheritsFrom + ".jar"));
             return GameLibraries;
         }
+
         private string BuildArguments()
         {
-            return string.Join(" ", GetJvmArguments().Concat(GetGCArguments()).ToList());
+            var HandledCore = HandleCurrentCore();
+            return string.Join(" ", GetJvmArguments(HandledCore).Concat(GetGCArguments(HandledCore)).ToList());
         }
-        private List<string> GetJvmArguments()
+
+        private List<string> GetJvmArguments(LocalGameInfoModel GameCore)
         {
             Dictionary<string, string> LaunchJvmArguments = new Dictionary<string, string>()
             {
-                {"${natives_directory}", "\"" + Path.Combine(LaunchCore.GameRootDir, "versions", LaunchCore.Id, "natives") + "\"" },
+                {"${natives_directory}", 
+                    GameCore.APIType == GameAPIType.Vanilla ? "\"" + Path.Combine(GameCore.GameRootDir, "versions", GameCore.Id, "natives") + "\""
+                    : "\"" + Path.Combine(GameCore.GameRootDir, "versions", (GameCore.VersionJson.InheritsFrom != null ?
+                    GameCore.VersionJson.InheritsFrom :
+                    GameCore.VersionJson.ClientVersion), "natives") + "\""
+                },
                 {"${launcher_name}", "MMCCCore" },
                 {"${launcher_version}", "1" },
                 {"${classpath}", "\"" + string.Join(";", GetLibraries()) + "\"" }
@@ -142,7 +153,28 @@ namespace MMCCCore.Module.Launcher
             return JvmArguments;
         }
 
-        private List<string> GetGCArguments()
+        private LocalGameInfoModel HandleCurrentCore()
+        {
+            LocalGameInfoModel rmodel = this.LaunchCore;
+            if(rmodel.APIType != GameAPIType.Vanilla)
+            {
+                string VanilaJsonPath = Path.Combine(rmodel.GameRootDir,
+                    "versions",
+                    rmodel.VersionJson.InheritsFrom,
+                    rmodel.VersionJson.InheritsFrom + ".json");
+                if (!File.Exists(VanilaJsonPath)) throw new Exception("此核心非原版,但它的原版json不存在");
+                var VanilaJson = JsonConvert.DeserializeObject<LocalMCVersionJsonModel>(File.ReadAllText(VanilaJsonPath));
+                if (VanilaJson == null) throw new Exception("此核心非原版,但它的原版json无效");
+                rmodel.VersionJson.AssetIndex = VanilaJson.AssetIndex;
+                rmodel.VersionJson.Arguments.Jvm = VanilaJson.Arguments.Jvm.Concat(rmodel.VersionJson.Arguments.Jvm).Distinct().ToList();
+                rmodel.VersionJson.Arguments.Game = VanilaJson.Arguments.Game.Concat(rmodel.VersionJson.Arguments.Game).Distinct().ToList();
+                rmodel.VersionJson.Libraries = VanilaJson.Libraries.Concat(rmodel.VersionJson.Libraries).Distinct().ToList();
+                rmodel.VersionJson.Downloads = VanilaJson.Downloads;
+            }
+            return rmodel;
+        }
+
+        private List<string> GetGCArguments(LocalGameInfoModel GameCore)
         {
             Dictionary<string, string> LaunchGCArguments = new Dictionary<string, string>()
             {
@@ -151,22 +183,23 @@ namespace MMCCCore.Module.Launcher
                     string.IsNullOrEmpty(LaunchCore.VersionJson.InheritsFrom) ? LaunchCore.Id
                     : LaunchCore.VersionJson.InheritsFrom
                 },
-                {"${game_directory}", "\"" + LaunchCore.GameRootDir  + "\""},
-                {"${assets_root}", "\"" + Path.Combine(LaunchCore.GameRootDir, "assets") + "\"" },
-                {"${assets_index_name}", LaunchCore.VersionJson.AssetIndex.Id },
+                {"${game_directory}", "\"" + GameCore.GameRootDir  + "\""},
+                {"${assets_root}", "\"" + Path.Combine(GameCore.GameRootDir, "assets") + "\"" },
+                {"${assets_index_name}", GameCore.VersionJson.AssetIndex.Id },
                 {"${auth_uuid}", LaunchAccount.Uuid.ToString("N") },
                 {"${auth_access_token}", LaunchAccount.AccessToken },
                 {"${user_type}", LaunchAccount.LoginType == AccountType.Offline ? "Legacy" : "Mojang" },
-                {"${version_type}", LaunchCore.VersionJson.Type }
+                {"${version_type}", GameCore.VersionJson.Type }
             };
+
             List<string> GCArguments = new List<string>();
             if (LaunchCore.VersionJson.MinecraftArguments != null)
             {
-                GCArguments = GCArguments.Concat(LaunchCore.VersionJson.MinecraftArguments.Split(' ').ToList()).ToList();
+                GCArguments = GCArguments.Concat(GameCore.VersionJson.MinecraftArguments.Split(' ').ToList()).ToList();
             }
             if (LaunchCore.VersionJson.Arguments != null && LaunchCore.VersionJson.Arguments.Game.Count > 0)
             {
-                foreach (JToken GCArg in LaunchCore.VersionJson.Arguments.Game)
+                foreach (JToken GCArg in GameCore.VersionJson.Arguments.Game)
                 {
                     if (GCArg.Type == JTokenType.Object) continue;
                     GCArguments.Add(GCArg.ToString());

@@ -15,10 +15,9 @@ namespace MMCCCore.Wrapper
         private int AllFileCount, ThreadCount;
         public event EventHandler<(int, int, DownloadResultModel)> ProgressChanged;
         private Queue<Thread> ThreadQueue = new Queue<Thread>();
-        public bool needStop = false;
-        private DownloadResultModel ErrorFile;
+        public DownloadResultModel ErrorFile;
         private List<DownloadResultModel> DownloadedFile = new List<DownloadResultModel>();
-        private static Object locker = new Object();
+        private static object locker = new object();
 
         public MultiFileDownloader(Stack<DownloadTaskInfo> DownloadStack, int ThreadCount = 32)
         {
@@ -27,32 +26,41 @@ namespace MMCCCore.Wrapper
             this.AllFileCount = DownloadStack.Count;
             this.ThreadCount = ThreadCount;
         }
+
+        public void StopDownload()
+        {
+            foreach (var item in ThreadQueue) item.Abort();
+        }
+
         private void DownloadThread()
         {
-            while (true)
+            try
             {
-                DownloadTaskInfo info = null;
-                lock (locker)
+                while (true)
                 {
-                    if (DownloadStack.Count <= 0) return;
-                    info = DownloadStack.Pop();
+                    DownloadTaskInfo info = null;
+                    lock (locker)
+                    {
+                        if (DownloadStack.Count <= 0) return;
+                        info = DownloadStack.Pop();
+                    }
+                    var result = FileDownloader.StartDownload(info);
+                    if (result.Result == DownloadResult.Error)
+                    {
+                        ErrorFile = result;
+                    }
+                    if (result.Result != DownloadResult.Error) DownloadedFile.Add(result);
+                    lock (locker) OnProgressChanged(result);
                 }
-                var result = FileDownloader.StartDownload(info);
-                if (result.Result == DownloadResult.Error)
-                {
-                    ErrorFile = result;
-                    if (needStop) return;
-                    continue;
-                }
-                if (result.Result != DownloadResult.Error) DownloadedFile.Add(result);
-                lock (locker) OnProgressChanged(result);
-                if (needStop) return;
             }
+            catch (ThreadAbortException) { }
         }
+
         private void OnProgressChanged(DownloadResultModel result)
         {
             ProgressChanged?.Invoke(this, (DownloadedFile.Count, AllFileCount, result));
         }
+
         public void StartDownload()
         {
             for(int i = 0; i < ThreadCount; i++)
@@ -62,10 +70,10 @@ namespace MMCCCore.Wrapper
                 thread.Start();
             }
         }
+
         public void WaitDownloadComplete()
         {
             OtherTools.WaitForAllThreadExit(ThreadQueue);
-            if (needStop) throw new Exception($"下载{ErrorFile.DownloadInfo.DestPath}时出现问题", ErrorFile.ErrorException);
         }
     }
 }

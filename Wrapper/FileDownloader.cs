@@ -13,8 +13,10 @@ namespace MMCCCore.Wrapper
     {
         private DownloadTaskInfo DownloadInfo;
         public FileDownloader(DownloadTaskInfo DownloadInfo) => this.DownloadInfo = DownloadInfo;
+
         public DownloadResultModel StartDownload()
         {
+            DownloadInfo.DestPath = DownloadInfo.DestPath.Replace('/', '\\');
             if (DownloadInfo.isSkipDownloadedFile)
             {
                 var result = OtherTools.VaildateSha1(DownloadInfo.DestPath, DownloadInfo.Sha1);
@@ -63,20 +65,17 @@ namespace MMCCCore.Wrapper
                     exception = e;
                 }
             }
+            Console.WriteLine(exception.Message);
             return new DownloadResultModel { DownloadInfo = DownloadInfo, Result = DownloadResult.Error, ErrorException = exception };
         }
+
         public static DownloadResultModel StartDownload(DownloadTaskInfo DownloadInfo)
         {
+            DownloadInfo.DestPath = DownloadInfo.DestPath.Replace('/', '\\');
             DownloadResultModel FileDownloadResult = new DownloadResultModel() { DownloadInfo = DownloadInfo };
             if (DownloadInfo.isSkipDownloadedFile && !string.IsNullOrWhiteSpace(DownloadInfo.Sha1))
             {
                 var result = OtherTools.VaildateSha1(DownloadInfo.DestPath, DownloadInfo.Sha1);
-                if (!result.isSuccess)
-                {
-                    FileDownloadResult.Result = DownloadResult.Error;
-                    FileDownloadResult.ErrorException = result.ErrorException;
-                    return FileDownloadResult;
-                }
                 if (result.isVaildated)
                 {
                     FileDownloadResult.Result = DownloadResult.Skipped;
@@ -148,6 +147,7 @@ namespace MMCCCore.Wrapper
             return new DownloadResultModel { DownloadInfo = DownloadInfo, Result = DownloadResult.Error, ErrorException = exception };
         }
     }
+
     public class FileDownloaderTaskAsync : FileDownloadProgressModel
     {
         private DownloadTaskInfo DownloadInfo;

@@ -64,7 +64,11 @@ namespace MMCCCore.Module.Minecraft
 
         private void Downloader_ProgressChanged(object sender, (int, int, DownloadResultModel) e)
         {
-            if (e.Item3.Result == DownloadResult.Error) downloader.needStop = true;
+            if (e.Item3.Result == DownloadResult.Error)
+            {
+                downloader.StopDownload();
+                throw new Exception($"下载{e.Item3.DownloadInfo.DownloadUrl}时出现错误:{e.Item3.ErrorException.Message}");
+            }
             double DownloadedProgress = (double)Math.Round((decimal)e.Item1 / e.Item2, 2);
             OnProgressChanged(DownloadedProgress, null);
         }
