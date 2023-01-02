@@ -18,6 +18,7 @@ namespace MMCCCore.Model.Launch
         public LauncherSettings LaunchArgs { get; set; }
         public LaunchStatus LaunchResult { get; set; }
         public Process MCProcess { get; set; }
+        public string Arguments { get; set; }
     }
     public class MCRunCompleteEventArgs
     {
