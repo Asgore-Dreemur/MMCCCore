@@ -24,7 +24,7 @@ namespace MMCCCore.Model.MinecraftFiles
         public bool isVaildated { get; set; }
         public Exception ErrorException { get; set; }
         public string FileSha1 { get; set; }
-    }
+    } 
     public enum MinecraftFilesDownloadResult
     {
         Success = 0,

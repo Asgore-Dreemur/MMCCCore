@@ -3,18 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using MMCCCore.Model.GameAssemblies;
 using System.Net;
-using Newtonsoft.Json;
+using System.Net.Http;
+using System.Threading;
 using System.IO;
+using MMCCCore.Module.Minecraft;
+using MMCCCore.Model.GameAssemblies;
+using Newtonsoft.Json;
 using MMCCCore.Wrapper;
+using MMCCCore.Model.Wrapper;
 using System.IO.Compression;
 using MMCCCore.Model.Core;
 using System.Diagnostics;
-using System.Text.RegularExpressions;
-using MMCCCore.Model.Wrapper;
-using MMCCCore.Module.Minecraft;
-using System.Threading;
 
 namespace MMCCCore.Module.GameAssemblies
 {
@@ -30,14 +30,17 @@ namespace MMCCCore.Module.GameAssemblies
                 if (a.Build > b.Build) return a.Build;
                 else return b.Build;
             });
+            
             return ForgeVersionList;
         }
+
         public static List<string> GetForgeSupportedVersion()
         {
             string VersionStr = WebClient.DownloadString($"https://bmclapi2.bangbang93.com/forge/minecraft");
             List<string> ForgeVersionList = JsonConvert.DeserializeObject<List<string>>(VersionStr);
             return ForgeVersionList;
         }
+
         public InstallerReponse InstallForge(ForgeVersionModel InstallInfo, string GameDir, string VersionName, string JavaPath, int MaxThreadCount = 64)
         {
             try
@@ -56,10 +59,10 @@ namespace MMCCCore.Module.GameAssemblies
                 var FileDownloaderResult = downloader.StartDownload();
                 if (FileDownloaderResult.Result != DownloadResult.Success) throw new Exception(message: "Forge下载失败", innerException: FileDownloaderResult.ErrorException);
                 ZipArchive archive = new ZipArchive(new FileStream(ForgePath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite));
-                if (archive.GetEntry("version.json") == null)
+                /*if (archive.GetEntry("version.json") == null)
                 {
                     return InstallLowerForge(InstallInfo, GameDir, VersionName, ForgePath);
-                }
+                }*/
                 LocalMCVersionJsonModel ForgeVersionInfo = JsonConvert.DeserializeObject<LocalMCVersionJsonModel>(new StreamReader(archive.GetEntry("version.json").Open()).ReadToEnd());
                 OnProgressChanged(0, "下载支持库...");
                 Stack<DownloadTaskInfo> DownloadStack = new Stack<DownloadTaskInfo>();
@@ -114,6 +117,22 @@ namespace MMCCCore.Module.GameAssemblies
                 InstallProcess.Start();
                 InstallProcess.WaitForExit();
                 if (InstallProcess.ExitCode != 0) throw new Exception("Forge安装失败");
+                string FolderName = $"{InstallInfo.MCVersion}-forge-{InstallInfo.Version}";
+                if (VersionName != FolderName)
+                {
+                    string JsonDir = Path.Combine(GameDir, "versions", FolderName);
+                    DirectoryInfo info = new DirectoryInfo(JsonDir);
+                    string DestVersionDir = Path.Combine(GameDir, "versions", VersionName);
+                    info.MoveTo(DestVersionDir);
+                    string JsonPath = Path.Combine(GameDir, "versions", VersionName, FolderName + ".json");
+                    FileInfo finfo = new FileInfo(JsonPath);
+                    JsonPath = Path.Combine(GameDir, "versions", VersionName, VersionName + ".json");
+                    finfo.MoveTo(JsonPath);
+                    var VersionJson = JsonConvert.DeserializeObject<LocalMCVersionJsonModel>(new StreamReader(JsonPath).ReadToEnd());
+                    VersionJson.Id = VersionName;
+                    string VersionJsonContext = JsonConvert.SerializeObject(VersionJson);
+                    File.WriteAllText(JsonPath, VersionJsonContext);
+                }
                 return new InstallerReponse { isSuccess = true, Exception = null};
             }
             catch(Exception e)
@@ -133,7 +152,8 @@ namespace MMCCCore.Module.GameAssemblies
             OnProgressChanged(DownloadedProgress, "下载支持库");
         }
 
-        public InstallerReponse InstallLowerForge(ForgeVersionModel InstallInfo, string GameDir, string VersionName, string ForgePath)
+        //该函数用于安装低版本的forge,但在使用Steve-xmh在bangbang93的forge-install-bootstrapper的基础上更改的jar后,不需要此函数,所以该函数被弃用
+        /*public InstallerReponse InstallLowerForge(ForgeVersionModel InstallInfo, string GameDir, string VersionName, string ForgePath)
         {
             try
             {
@@ -169,6 +189,6 @@ namespace MMCCCore.Module.GameAssemblies
             {
                 return new InstallerReponse { isSuccess = false, Exception = e };
             }
-        }
+        }*/
     }
 }
