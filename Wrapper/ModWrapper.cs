@@ -35,6 +35,7 @@ namespace MMCCCore.Wrapper
                     if (info == null) return null;
                     minfo.Data = info;
                     minfo.Type = ModTypes.Forge_Old;
+                    return minfo;
                 }
                 else if (filelist.Contains("META-INF/mods.toml"))
                 {
@@ -50,6 +51,7 @@ namespace MMCCCore.Wrapper
                     model.Name = modinfo.ContainsKey("displayName") ? modinfo["displayName"].ToString() : string.Empty;
                     minfo.Data = model;
                     minfo.Type = ModTypes.Forge_Old;
+                    return minfo;
                 }
                 else if (filelist.Contains("fabric.mod.json"))
                 {
@@ -60,9 +62,10 @@ namespace MMCCCore.Wrapper
                     if (info == null) return null;
                     minfo.Data = info;
                     minfo.Type = ModTypes.Forge_Old;
+                    return minfo;
                 }
             }
-            catch (Exception) { return null; }
+            catch (Exception e) { return null; }
             return null;
         }
     }
