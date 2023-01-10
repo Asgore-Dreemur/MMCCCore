@@ -14,10 +14,8 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v2
       with:
-        dotnet-version: 6.0.x
+        dotnet-version: 4.7.3
 
     - name: Build and Pack
       run: |
         dotnet build --configuration Release
-        dotnet pack --configuration Release
-        dotnet nuget push .\bin\Release\*.nupkg -s https://api.nuget.org/v3/index.json -k ${{ secrets.NUGETKEY }} --skip-duplicate
