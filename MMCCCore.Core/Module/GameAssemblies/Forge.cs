@@ -31,7 +31,7 @@ namespace MMCCCore.Core.Module.GameAssemblies
                 if (a.Build > b.Build) return a.Build;
                 else return b.Build;
             });
-            
+
             return ForgeVersionList;
         }
 
@@ -51,7 +51,8 @@ namespace MMCCCore.Core.Module.GameAssemblies
                 string ForgeInstallerPath = Path.Combine(Path.GetTempPath(), "forge-installer-bootstapper.jar");
                 File.WriteAllBytes(ForgeInstallerPath, InstallerResources.forge_install_bootstrapper);
                 OnProgressChanged(0, "下载forge...");
-                FileDownloader downloader = new FileDownloader(new DownloadTaskInfo {
+                FileDownloader downloader = new FileDownloader(new DownloadTaskInfo
+                {
                     DestPath = ForgePath,
                     DownloadUrl = $"https://download.mcbbs.net/forge/download/{InstallInfo.Build.ToString()}",
                     MaxTryCount = 4
@@ -75,17 +76,18 @@ namespace MMCCCore.Core.Module.GameAssemblies
                     string LibraryDir = Path.Combine(GameDir, "libraries", LibraryInfo.Path.Substring(0, LibraryInfo.Path.LastIndexOf('/')));
                     string LibraryPath = Path.Combine(GameDir, "libraries", LibraryInfo.Path);
                     OtherTools.CreateDir(LibraryDir);
-                    DownloadStack.Push(new DownloadTaskInfo {
-                            DownloadUrl = LibraryUrl,
-                            DestPath = LibraryPath,
-                            MaxTryCount = 4,
-                            isSkipDownloadedFile = true,
-                            Sha1Vaildate = true,
-                            Sha1 = LibraryInfo.CheckSum
-                     });
+                    DownloadStack.Push(new DownloadTaskInfo
+                    {
+                        DownloadUrl = LibraryUrl,
+                        DestPath = LibraryPath,
+                        MaxTryCount = 4,
+                        isSkipDownloadedFile = true,
+                        Sha1Vaildate = true,
+                        Sha1 = LibraryInfo.CheckSum
+                    });
                 }
                 ForgeInstallProfileModel ForgeInstallInfo = JsonConvert.DeserializeObject<ForgeInstallProfileModel>(new StreamReader(archive.GetEntry("install_profile.json").Open()).ReadToEnd());
-                LocalMCVersionJsonModel InstallInfo2Json = new LocalMCVersionJsonModel{Libraries = ForgeInstallInfo.Libraries};
+                LocalMCVersionJsonModel InstallInfo2Json = new LocalMCVersionJsonModel { Libraries = ForgeInstallInfo.Libraries };
                 LibrariesList = MCLibrary.GetAllLibraries(InstallInfo2Json);
                 foreach (var LibraryInfo in LibrariesList)
                 {
@@ -108,8 +110,9 @@ namespace MMCCCore.Core.Module.GameAssemblies
                 var LzmaPath = Path.Combine(GameDir, "libraries", "data", "client.lzma");
                 var entry = archive.GetEntry("data/client.lzma");
                 entry.ExtractToFile(LzmaPath);
-                foreach(var item in ForgeInstallInfo.Processors){
-                    if(item.Sides.Count <= 0 || item.Sides[0] == "server")continue;
+                foreach (var item in ForgeInstallInfo.Processors)
+                {
+                    if (item.Sides.Count <= 0 || item.Sides[0] == "server") continue;
                     string InstallJarPath = LibrariesList.Find(i => i.Name == item.Jar).Path;
                     InstallJarPath = Path.Combine(GameDir, "libraries", InstallJarPath);
                     List<string> Classpath = LibrariesList.FindAll(i => item.ClassPath.Contains(i.Name))
@@ -117,10 +120,11 @@ namespace MMCCCore.Core.Module.GameAssemblies
                     string Manifest = new StreamReader(archive.GetEntry("META-INF/MANIFEST.MF").Open()).ReadToEnd();
                     var ManProp = Manifest.Split("\r\n".ToCharArray()).ToList();
                     ManProp = ManProp.FindAll(i => !string.IsNullOrEmpty(i)).ToList();
-                    if(ManProp.Count == 0)throw new Exception("找不到支持库的MainClass");
-                    string MainClass = ManProp.Find(i => {
+                    if (ManProp.Count == 0) throw new Exception("找不到支持库的MainClass");
+                    string MainClass = ManProp.Find(i =>
+                    {
                         var split = i.Split(':');
-                        if(split[0].Trim() == "Main-Class")return true;
+                        if (split[0].Trim() == "Main-Class") return true;
                         return false;
                     }).Split(':')[1];
                     List<string> Args = new List<string>();
@@ -139,33 +143,36 @@ namespace MMCCCore.Core.Module.GameAssemblies
                                 if (arg.StartsWith("[") && arg.EndsWith("]")) arg = GetForgeFilePath(arg);
                             }
                             arg = Path.Combine(GameDir, "libraries", info);
-                                OtherTools.CreateDir(arg);
+                            OtherTools.CreateDir(arg);
                         }
                         Args.Add(arg);
                     }
-                    Process process = new Process{
-                        StartInfo = new ProcessStartInfo{
+                    Process process = new Process
+                    {
+                        StartInfo = new ProcessStartInfo
+                        {
                             FileName = JavaPath,
                             Arguments = $"-cp {string.Join(OtherTools.JavaCPSeparatorChar.ToString(), Classpath)} {MainClass} {string.Join(" ", Args)}"
                         }
                     };
                     process.Start();
                     process.WaitForExit();
-                    if(process.ExitCode != 0)throw new Exception("forge安装失败");
+                    if (process.ExitCode != 0) throw new Exception("forge安装失败");
                 }
-                return new InstallerResponse { isSuccess = true, Exception = null};
+                return new InstallerResponse { isSuccess = true, Exception = null };
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 return new InstallerResponse { isSuccess = false, Exception = e };
             }
         }
 
-        private string GetForgeFilePath(string Name){
+        private string GetForgeFilePath(string Name)
+        {
             List<string> FileExtenstionList = Name.Split('@').ToList();
             string LibraryName = FileExtenstionList[0];
             string LibraryPath = MCLibrary.GetMavenFilePathFromName(LibraryName);
-            if(FileExtenstionList.Count >= 2)LibraryPath = LibraryPath.TrimEnd(".jar".ToCharArray()) + $".{FileExtenstionList[1]}";
+            if (FileExtenstionList.Count >= 2) LibraryPath = LibraryPath.TrimEnd(".jar".ToCharArray()) + $".{FileExtenstionList[1]}";
             return LibraryPath;
         }
 
@@ -214,7 +221,8 @@ namespace MMCCCore.Core.Module.GameAssemblies
                 VersionReader.Close();
                 Directory.Delete(tempDir, true);
                 return new InstallerResponse { isSuccess = true, Exception = null };
-            }catch(Exception e)
+            }
+            catch (Exception e)
             {
                 return new InstallerResponse { isSuccess = false, Exception = e };
             }
