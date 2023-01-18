@@ -108,7 +108,7 @@ namespace MMCCCore.Core.Module.Minecraft
             string NamespacePath = SplitArray[0].Replace('.', '/');
             string PackageName = SplitArray[1];
             string PackageVersion = SplitArray[2];
-            return $"{NamespacePath}/{PackageName}/{PackageVersion}/{PackageName}-{PackageVersion}.jar";
+            return $"{NamespacePath}{Path.DirectorySeparatorChar}{PackageName}{Path.DirectorySeparatorChar}{PackageVersion}{Path.DirectorySeparatorChar}{PackageName}-{PackageVersion}.jar";
         }
 
         public static List<MCLibraryInfo> GetAllLibraries(LocalMCVersionJsonModel GameInfo)

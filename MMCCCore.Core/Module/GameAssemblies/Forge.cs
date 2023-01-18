@@ -117,6 +117,7 @@ namespace MMCCCore.Core.Module.GameAssemblies
                     InstallJarPath = Path.Combine(GameDir, "libraries", InstallJarPath);
                     List<string> Classpath = LibrariesList.FindAll(i => item.ClassPath.Contains(i.Name))
                         .Select(i => Path.Combine(GameDir, "libraries", i.Path)).ToList();
+                    Classpath.Add(InstallJarPath);
                     string Manifest = new StreamReader(archive.GetEntry("META-INF/MANIFEST.MF").Open()).ReadToEnd();
                     var ManProp = Manifest.Split("\r\n".ToCharArray()).ToList();
                     ManProp = ManProp.FindAll(i => !string.IsNullOrEmpty(i)).ToList();
@@ -143,7 +144,7 @@ namespace MMCCCore.Core.Module.GameAssemblies
                                 if (arg.StartsWith("[") && arg.EndsWith("]")) arg = GetForgeFilePath(arg);
                             }
                             arg = Path.Combine(GameDir, "libraries", info);
-                            OtherTools.CreateDir(arg);
+                            OtherTools.CreateDir(arg.Substring(0, arg.LastIndexOf(Path.DirectorySeparatorChar)));
                         }
                         Args.Add(arg);
                     }
