@@ -66,6 +66,11 @@ namespace MMCCCore.Core.Module.GameAssemblies
                     return InstallLowerForge(InstallInfo, GameDir, VersionName, ForgePath);
                 }
                 LocalMCVersionJsonModel ForgeVersionInfo = JsonConvert.DeserializeObject<LocalMCVersionJsonModel>(new StreamReader(archive.GetEntry("version.json").Open()).ReadToEnd());
+                ForgeVersionInfo.Id = VersionName;
+                string VersionPath = Path.Combine(GameDir, "versions", VersionName);
+                OtherTools.CreateDir(VersionPath);
+                VersionPath = Path.Combine(VersionPath, VersionName + ".json");
+                File.WriteAllText(VersionPath, JsonConvert.SerializeObject(ForgeVersionInfo));
                 OnProgressChanged(0, "下载支持库...");
                 Stack<DownloadTaskInfo> DownloadStack = new Stack<DownloadTaskInfo>();
                 var LibrariesList = MCLibrary.GetAllLibraries(ForgeVersionInfo);
@@ -107,18 +112,27 @@ namespace MMCCCore.Core.Module.GameAssemblies
                 mdownloader.ProgressChanged += Mdownloader_ProgressChanged;
                 mdownloader.StartDownload();
                 mdownloader.WaitDownloadComplete();
+                OtherTools.CreateDir(Path.Combine(GameDir, "libraries", "data"));
                 var LzmaPath = Path.Combine(GameDir, "libraries", "data", "client.lzma");
+                if (File.Exists(LzmaPath)) File.Delete(LzmaPath);
                 var entry = archive.GetEntry("data/client.lzma");
                 entry.ExtractToFile(LzmaPath);
+                int Steps = ForgeInstallInfo.Processors.Count;
+                int CurrentStep = 1;
+                double CurrentProgress = Math.Round((double)Math.Round((decimal)CurrentStep / Steps, 2));
+                OnProgressChanged(CurrentProgress, "安装forge");
                 foreach (var item in ForgeInstallInfo.Processors)
                 {
-                    if (item.Sides.Count <= 0 || item.Sides[0] == "server") continue;
+                    if (item.Sides.Count > 0 && item.Sides[0] == "server") continue;
                     string InstallJarPath = LibrariesList.Find(i => i.Name == item.Jar).Path;
                     InstallJarPath = Path.Combine(GameDir, "libraries", InstallJarPath);
                     List<string> Classpath = LibrariesList.FindAll(i => item.ClassPath.Contains(i.Name))
-                        .Select(i => Path.Combine(GameDir, "libraries", i.Path)).ToList();
+                        .Select(i => OtherTools.FormatPath(Path.Combine(GameDir, "libraries", i.Path))).ToList();
                     Classpath.Add(InstallJarPath);
-                    string Manifest = new StreamReader(archive.GetEntry("META-INF/MANIFEST.MF").Open()).ReadToEnd();
+                    var jarinfo = LibrariesList.Find(i => i.Name == item.Jar);
+                    var jarpath = OtherTools.FormatPath(Path.Combine(GameDir, "libraries", jarinfo.Path));
+                    var jararchive = new ZipArchive(new FileStream(jarpath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite));
+                    string Manifest = new StreamReader(jararchive.GetEntry("META-INF/MANIFEST.MF").Open()).ReadToEnd();
                     var ManProp = Manifest.Split("\r\n".ToCharArray()).ToList();
                     ManProp = ManProp.FindAll(i => !string.IsNullOrEmpty(i)).ToList();
                     if (ManProp.Count == 0) throw new Exception("找不到支持库的MainClass");
@@ -134,17 +148,29 @@ namespace MMCCCore.Core.Module.GameAssemblies
                         string arg = "";
                         if (info == "{MINECRAFT_JAR}")
                         {
-                            arg = Path.Combine(GameDir, "versions", InstallInfo.MCVersion, InstallInfo.MCVersion + ".jar");
+                            arg = OtherTools.FormatPath(Path.Combine(GameDir, "versions", InstallInfo.MCVersion, InstallInfo.MCVersion + ".jar"));
+                            arg = "\"" + arg + "\"";
                         }
                         else
                         {
-                            if (info.StartsWith("{") && info.StartsWith("}"))
+                            if (info.StartsWith("[") && info.EndsWith("]"))
+                            {
+                                arg = GetForgeFilePath(info.TrimStart('[').TrimEnd(']'));
+                                arg = arg.TrimStart("\\".ToCharArray()).TrimStart("/".ToCharArray());
+                                arg = OtherTools.FormatPath(Path.Combine(GameDir, "libraries", arg));
+                                OtherTools.CreateDir(arg.Substring(0, arg.LastIndexOf(Path.DirectorySeparatorChar)));
+                                arg = "\"" + arg + "\"";
+                            }
+                            else if (info.StartsWith("{") && info.EndsWith("}"))
                             {
                                 arg = ForgeInstallInfo.Data[info.TrimStart('{').TrimEnd('}')]["client"];
-                                if (arg.StartsWith("[") && arg.EndsWith("]")) arg = GetForgeFilePath(arg);
+                                if(arg.StartsWith("[") && arg.EndsWith("]")) arg = GetForgeFilePath(arg.TrimStart('[').TrimEnd(']'));
+                                arg = arg.TrimStart("\\".ToCharArray()).TrimStart("/".ToCharArray());
+                                arg = OtherTools.FormatPath(Path.Combine(GameDir, "libraries", arg));
+                                OtherTools.CreateDir(arg.Substring(0, arg.LastIndexOf(Path.DirectorySeparatorChar)));
+                                arg = "\"" + arg + "\"";
                             }
-                            arg = Path.Combine(GameDir, "libraries", info);
-                            OtherTools.CreateDir(arg.Substring(0, arg.LastIndexOf(Path.DirectorySeparatorChar)));
+                            else arg = info;
                         }
                         Args.Add(arg);
                     }
@@ -153,12 +179,30 @@ namespace MMCCCore.Core.Module.GameAssemblies
                         StartInfo = new ProcessStartInfo
                         {
                             FileName = JavaPath,
-                            Arguments = $"-cp {string.Join(OtherTools.JavaCPSeparatorChar.ToString(), Classpath)} {MainClass} {string.Join(" ", Args)}"
+                            Arguments = $"-cp \"{string.Join(OtherTools.JavaCPSeparatorChar.ToString(), Classpath)}\" {MainClass} {string.Join(" ", Args)}",
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                            UseShellExecute = false
                         }
                     };
+                    string output = "";
                     process.Start();
+                    process.BeginOutputReadLine();
+                    process.BeginErrorReadLine();
+                    process.OutputDataReceived += (_, e) =>
+                    {
+                        output += e.Data;
+                        OnProgressChanged(CurrentProgress, e.Data);
+                    };
+                    process.ErrorDataReceived += (_, e) => {
+                        output += e.Data;
+                        OnProgressChanged(CurrentProgress, e.Data);
+                    };
                     process.WaitForExit();
-                    if (process.ExitCode != 0) throw new Exception("forge安装失败");
+                    if (process.ExitCode != 0) throw new Exception($"forge安装失败", new Exception(output));
+                    output = "";
+                    ++CurrentStep;
+                    CurrentProgress = CurrentStep / Steps;
                 }
                 return new InstallerResponse { isSuccess = true, Exception = null };
             }

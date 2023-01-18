@@ -42,8 +42,8 @@ namespace MMCCCore.Core.Core.Demo
             var res = fabric.InstallFabric("C:\\MMCCTest.Minecraft", "1.16.5Fabric2", item[0], @"1.16.5");*/
             Forge forge = new Forge();
             forge.ProgressChanged += Forge_ProgressChanged;
-            var forgeinfo = Forge.GetForgeVersionsFromVersion("1.16.5").Last();
-            var res = forge.InstallForge(Forge.GetForgeVersionsFromVersion("1.16.5").Last(), "C:\\MMCCTest.Minecraft", "1.16.5ForgeTest114", @"I:\Program Files\Java\jdk1.8.0_202\bin\java.exe");
+            var forgeinfo = Forge.GetForgeVersionsFromVersion("1.16.5")[2];
+            var res = forge.InstallForge(Forge.GetForgeVersionsFromVersion("1.16.5").Last(), "C:\\MMCCTest.Minecraft", "1.16.5ForgeTest76", @"I:\Program Files\Java\jdk1.8.0_202\bin\java.exe");
             /*string DownloadUrls = "";
             Stack<DownloadTaskInfo> stack = new Stack<DownloadTaskInfo>();
             List<string> DownloadList = DownloadUrls.Split('\n').ToList();

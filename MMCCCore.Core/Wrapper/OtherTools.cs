@@ -20,6 +20,8 @@ namespace MMCCCore.Core.Wrapper
                 return Environment.OSVersion.Platform == PlatformID.Win32NT ? ';' : ':';
             }
         }
+
+        public static string FormatPath(string path) => path.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
         public static HashVaildateResult VaildateSha1(string FilePath, string Sha1)
         {
             try

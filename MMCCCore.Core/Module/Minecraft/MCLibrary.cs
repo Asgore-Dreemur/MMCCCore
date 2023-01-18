@@ -104,10 +104,16 @@ namespace MMCCCore.Core.Module.Minecraft
 
         public static string GetMavenFilePathFromName(string Name)
         {
-            var SplitArray = Name.Split(':');
-            string NamespacePath = SplitArray[0].Replace('.', '/');
+            var SplitArray = Name.Split(':').ToList();
+            string NamespacePath = SplitArray[0].Replace('.', Path.DirectorySeparatorChar);
             string PackageName = SplitArray[1];
             string PackageVersion = SplitArray[2];
+            if(SplitArray.Count > 3)
+            {
+                var extarray = SplitArray.GetRange(3, SplitArray.Count - 3);
+                string JarName = PackageVersion + $"-{string.Join("-", extarray)}";
+                return $"{NamespacePath}{Path.DirectorySeparatorChar}{PackageName}{Path.DirectorySeparatorChar}{PackageVersion}{Path.DirectorySeparatorChar}{PackageName}-{JarName}.jar";
+            }
             return $"{NamespacePath}{Path.DirectorySeparatorChar}{PackageName}{Path.DirectorySeparatorChar}{PackageVersion}{Path.DirectorySeparatorChar}{PackageName}-{PackageVersion}.jar";
         }
 

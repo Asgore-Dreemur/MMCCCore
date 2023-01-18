@@ -53,11 +53,11 @@ namespace MMCCCore.Core.Wrapper
         public static bool IsExistsVersion(string GameDir, string VersionName)
         {
             string VersionDir = Path.Combine(GameDir, "versions", VersionName);
-            string VersionJsonDir = Path.Combine(VersionDir, VersionName + ".json");
-            return Directory.Exists(VersionDir) && File.Exists(VersionJsonDir);
+            string VersionJsonPath = Path.Combine(VersionDir, VersionName + ".json");
+            return Directory.Exists(VersionDir) && File.Exists(VersionJsonPath);
         }
 
-        public static LocalGameInfoModel GetCoreForId(string GameDir, string id)
+        public static LocalGameInfoModel GetCoreFromId(string GameDir, string id)
         {
             string GameVersionsDir = Path.Combine(GameDir, "versions");
             if (!Directory.Exists(GameVersionsDir)) return null;
@@ -95,9 +95,24 @@ namespace MMCCCore.Core.Wrapper
             }
             else
             {
-                if (GameCore.VersionJson.Arguments == null) return GameAPIType.Vanilla;
+                if (GameCore.VersionJson.Arguments == null)
+                {
+                    if(string.IsNullOrEmpty(GameCore.VersionJson.MinecraftArguments)) return GameAPIType.Vanilla;
+                    else
+                    {
+                        if (GameCore.VersionJson.MinecraftArguments.Contains("optifine")) return GameAPIType.Optifine;
+                        else return GameAPIType.Vanilla;
+                    }
+                }
                 else
                 {
+                    var optifind = GameCore.VersionJson.Arguments.Game.Find(i =>
+                    {
+                        if (i.Type == JTokenType.Object) return false;
+                        else if (i.ToObject<string>().Contains("optifine")) return true;
+                        else return false;
+                    });
+                    if (optifind != default) return GameAPIType.Optifine;
                     if (GameCore.VersionJson.Arguments.Game.Count >= 2)
                     {
                         if (GameCore.VersionJson.Arguments.Game.Find(i => i.ToString().Contains("com.mumfrey.liteloader")) != default) return GameAPIType.LiteLoader;
