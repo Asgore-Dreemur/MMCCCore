@@ -24,7 +24,9 @@ namespace MMCCCore.Core.Module.Authenticator
             this.Password = Password;
         }
 
-        public async Task<Account> AuthenticateAsync()
+        public YggdrasilAccount Authenticate() => AuthenticateAsync().GetAwaiter().GetResult();
+
+        public async Task<YggdrasilAccount> AuthenticateAsync()
         {
             try
             {
@@ -33,20 +35,23 @@ namespace MMCCCore.Core.Module.Authenticator
                 string AuthResult = await (await HttpWrapper.HttpPostAsync(AuthAddr + $"?clientToken={ClientToken}&username={Username}&password={Password}")).Content.ReadAsStringAsync();
                 YggdrasilAuthResponseModel ResponseRes = JsonConvert.DeserializeObject<YggdrasilAuthResponseModel>(AuthResult);
                 if (ResponseRes.ErrorMessage != null) throw new Exception("登录失败,请检查你的用户名和密码,错误:" + ResponseRes.ErrorMessage);
-                return new Account
+                return new YggdrasilAccount
                 {
                     AccessToken = ResponseRes.AccessToken,
                     ClientToken = ResponseRes.ClientToken,
                     Uuid = ResponseRes.SelectedProfile == null ? Guid.Parse(ResponseRes.AvailableProfiles[0].Id) : Guid.Parse(ResponseRes.SelectedProfile.Id),
                     Name = ResponseRes.SelectedProfile == null ? ResponseRes.AvailableProfiles[0].Name : ResponseRes.SelectedProfile.Name,
-                    LoginType = AccountType.Yggdrasil
+                    LoginType = AccountType.Yggdrasil,
+                    AvailableProfiles = ResponseRes.AvailableProfiles,
+                    SelectedProfile = ResponseRes.SelectedProfile,
+                    ServerAddr = YggdrasilServerAddr
                 };
             }catch(Exception e)
             {
-                return new Account { ErrorMessage = e.InnerException != null ? e.InnerException.Message : e.Message };
+                return new YggdrasilAccount { ErrorMessage = e.InnerException != null ? e.InnerException.Message : e.Message };
             }
         }
-        public async Task<Account> RefreshAccountAsync(string AccessToken)
+        public async Task<YggdrasilAccount> RefreshAccountAsync(string AccessToken)
         {
             try
             {
@@ -55,18 +60,20 @@ namespace MMCCCore.Core.Module.Authenticator
                 string AuthResult = await (await HttpWrapper.HttpPostAsync(AuthAddr + $"?accessToken={AccessToken}")).Content.ReadAsStringAsync();
                 YggdrasilAuthResponseModel ResponseRes = JsonConvert.DeserializeObject<YggdrasilAuthResponseModel>(AuthResult);
                 if (ResponseRes.ErrorMessage != null) throw new Exception("刷新失败,错误:" + ResponseRes.ErrorMessage);
-                return new Account
+                return new YggdrasilAccount
                 {
                     AccessToken = ResponseRes.AccessToken,
                     ClientToken = ResponseRes.ClientToken,
                     Uuid = ResponseRes.SelectedProfile == null ? Guid.Parse(ResponseRes.AvailableProfiles[0].Id) : Guid.Parse(ResponseRes.SelectedProfile.Id),
                     Name = ResponseRes.SelectedProfile == null ? ResponseRes.AvailableProfiles[0].Name : ResponseRes.SelectedProfile.Name,
-                    LoginType = AccountType.Yggdrasil
+                    AvailableProfiles = ResponseRes.AvailableProfiles,
+                    SelectedProfile = ResponseRes.SelectedProfile,
+                    ServerAddr = YggdrasilServerAddr
                 };
             }
             catch (Exception e)
             {
-                return new Account { ErrorMessage = e.InnerException != null ? e.InnerException.Message : e.Message };
+                return new YggdrasilAccount { ErrorMessage = e.InnerException != null ? e.InnerException.Message : e.Message };
             }
         }
         public async Task<SignoutResponse> SignoutAsync()
@@ -107,6 +114,20 @@ namespace MMCCCore.Core.Module.Authenticator
             {
                 return new YggdrasilResultModel { isSuccess = false, ErrorException = e };
             }
+        }
+
+        public static async Task<List<string>> GenerateYggdrasilLaunchArgs(string AuthlibPath, string ServerAddr)
+        {
+            List<string> args = new List<string>();
+            string base64sec = Convert.ToBase64String(await (await new HttpWrapper().HttpGetAsync(ServerAddr)).Content.ReadAsByteArrayAsync());
+            args.Add($"-javaagent:{AuthlibPath}={ServerAddr}");
+            args.Add($"-Dauthlibinjector.yggdrasil.prefetched={base64sec}");
+            return args;
+        }
+
+        public static async Task<string> GetAuthlibDownloadUrl()
+        {
+            return JObject.Parse(await (await (new HttpWrapper().HttpGetAsync("https://bmclapi2.bangbang93.com/mirrors/authlib-injector/artifact/latest.json"))).Content.ReadAsStringAsync())["download_url"].ToString();
         }
     }
 }

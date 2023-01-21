@@ -16,6 +16,19 @@ namespace MMCCCore.Core.Model.Authenticator
         public string Name { get; set; }
         public Guid Uuid { get; set; }
     }
+
+    public class MicrosoftAccount : Account
+    {
+        public List<PlayerSkinModel> Skins { get; set; } = new List<PlayerSkinModel>();
+    }
+
+    public class YggdrasilAccount : Account
+    {
+        public List<YggdrasilProfileModel> AvailableProfiles { get; set; } = new List<YggdrasilProfileModel>();
+        public YggdrasilProfileModel SelectedProfile { get; set; }
+        public string ServerAddr { get; set; }
+    }
+
     public enum AccountType
     {
         Microsoft = 0,

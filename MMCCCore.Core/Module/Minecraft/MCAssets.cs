@@ -51,7 +51,8 @@ namespace MMCCCore.Core.Module.Minecraft
                 downloader = new MultiFileDownloader(DownloadStack, MaxThreadCount);
                 downloader.ProgressChanged += Downloader_ProgressChanged;
                 downloader.StartDownload();
-                downloader.WaitDownloadComplete();
+                var result = downloader.WaitDownloadComplete();
+                if (result.Result == DownloadResult.Error) throw new Exception("下载文件时出现一个或多个文件错误", result.ErrorException);
                 return new MinecraftFilesDownloadInfo
                 {
                     DownloadResult = MinecraftFilesDownloadResult.Success
@@ -64,11 +65,6 @@ namespace MMCCCore.Core.Module.Minecraft
 
         private void Downloader_ProgressChanged(object sender, (int, int, DownloadResultModel) e)
         {
-            if (e.Item3.Result == DownloadResult.Error)
-            {
-                downloader.StopDownload();
-                throw new Exception($"下载{e.Item3.DownloadInfo.DownloadUrl}时出现错误:{e.Item3.ErrorException.Message}");
-            }
             double DownloadedProgress = (double)Math.Round((decimal)e.Item1 / e.Item2, 2);
             OnProgressChanged(DownloadedProgress, null);
         }

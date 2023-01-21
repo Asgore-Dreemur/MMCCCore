@@ -130,7 +130,7 @@ namespace MMCCCore.Core.Model.Authenticator
         public string Name { get; set; }
 
         [JsonProperty("skins")]
-        public List<PlayerSkinModel> Skins { get; set; }
+        public List<PlayerSkinModel> Skins { get; set; } = new List<PlayerSkinModel>();
 
         [JsonProperty("capes")]
         public JArray Capes { get; set; }

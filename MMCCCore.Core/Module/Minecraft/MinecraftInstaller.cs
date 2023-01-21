@@ -28,7 +28,9 @@ namespace MMCCCore.Core.Module.Minecraft
             this.VersionName = VersionName;
             this.MaxThreadCount = MaxThreadCount;
         }
-        public InstallerResponse InstallMinecraft(bool isSkipDownloadedFile = true)
+
+        public InstallerResponse InstallMinecraft(bool isSkipDownloadedFile = true) => InstallMinecraftTaskAsync(isSkipDownloadedFile).GetAwaiter().GetResult();
+        public async Task<InstallerResponse> InstallMinecraftTaskAsync(bool isSkipDownloadedFile = true)
         {
             WebClient WebClient = new WebClient();
             if (CoreWrapper.IsExistsVersion(GameDir, VersionName) || string.IsNullOrWhiteSpace(VersionName)) 

@@ -30,7 +30,6 @@ namespace MMCCCore.Core.Module.Minecraft
                     if (LibraryInfo.isEnabled)
                     {
                         string LibraryPath = Path.Combine(GameDir, "libraries", LibraryInfo.Path.Replace('/', '\\'));
-                        //if (OtherTools.VaildateSha1(LibraryPath, LibraryInfo.CheckSum)) continue;
                         OtherTools.CreateDir(LibraryPath.Substring(0, LibraryPath.LastIndexOf('\\')));
                         var DownloadInfo = new DownloadTaskInfo { DownloadUrl = DownloadAPIManager.Current.Libraries.TrimEnd('/') + $"/{LibraryInfo.Path}",
                             DestPath = LibraryPath,
@@ -44,16 +43,12 @@ namespace MMCCCore.Core.Module.Minecraft
                 MultiFileDownloader downloader = new MultiFileDownloader(DownloadStack, MaxThreadCount);
                 downloader.ProgressChanged += (_, e) =>
                 {
-                    if(e.Item3.Result == DownloadResult.Error)
-                    {
-                        downloader.StopDownload();
-                        throw new Exception($"下载{e.Item3.DownloadInfo.DownloadUrl}时出现错误:{e.Item3.ErrorException.Message}");
-                    }
                     double DownloadedProgress = (double)Math.Round((decimal)e.Item1 / e.Item2, 2);
                     OnProgressChanged(DownloadedProgress, "下载支持库");
                 };
                 downloader.StartDownload();
-                downloader.WaitDownloadComplete();
+                var result = downloader.WaitDownloadComplete();
+                if (result.Result == DownloadResult.Error) throw new Exception("下载支持库时出现一个或多个文件错误", result.ErrorException);
                 string NativesPath = Path.Combine(GameDir, "versions", GameInfo.Id, "natives");
                 foreach(var item in AllLibraries)
                 {

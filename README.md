@@ -14,8 +14,8 @@ MMCCCore是一个为Modern Minecraft Client所开发的启动器核心
 
 >本项目使用了Newtonsoft.Json,System.Security.Permissions和System.IO.Compression.ZipFile
 ## 架构与环境
-+ 该项目现在还不是一个跨平台项目,仅限于Windows,但以后可能会改变成为一个跨平台项目(改是很容易的)  
-+ 运行于.Net Core 3.1/.Net Framework 4.7
++ 该项目现在是一个跨平台项目,但没有经过测试  
++ 运行于.Net Standard 2.0/.Net 6.0  
 ## 功能
 + 支持Microsoft,离线,外置登录(不支持Mojang)  
 + 下载Minecraft本体与安装各种ModAPI(不支持Quilt)

@@ -17,6 +17,11 @@ namespace MMCCCore.Core.Module.GameAssemblies
 {
     public class LiteLoader
     {
+        public string GameDir { get; set; }
+        public string VersionName { get; set; }
+        public string VanillaVersionName { get; set; }
+
+
         private static WebClient WebClient = new WebClient();
         public static LiteLoaderVersionModel GetLiteLoaderVersionFromVersion(string MCVersion)
         {
@@ -28,11 +33,16 @@ namespace MMCCCore.Core.Module.GameAssemblies
             string VersionStr = WebClient.DownloadString("https://bmclapi2.bangbang93.com/liteloader/list");
             return JsonConvert.DeserializeObject<LiteLoaderVersionModel>(VersionStr);
         }
-        public InstallerResponse InstallLiteLoader(string GameDir, LiteLoaderVersionModel InstallInfo, string VersionName, string VanillaJson)
+
+        public InstallerResponse InstallLiteLoader(LiteLoaderVersionModel InstallInfo) => InstallLiteLoaderTaskAsync(InstallInfo).GetAwaiter().GetResult();
+
+        public async Task<InstallerResponse> InstallLiteLoaderTaskAsync(LiteLoaderVersionModel InstallInfo)
         {
             try
             {
+                GameDir = OtherTools.FormatPath(GameDir);
                 if (string.IsNullOrWhiteSpace(VersionName) || CoreWrapper.IsExistsVersion(GameDir, VersionName)) throw new Exception("版本名不可重名或留空");
+                string VanillaJson = File.ReadAllText(Path.Combine(GameDir, "versions", VanillaVersionName, VanillaVersionName + ".json"));
                 LocalMCVersionJsonModel VersionInfo = JsonConvert.DeserializeObject<LocalMCVersionJsonModel>(VanillaJson);
                 if (!CoreWrapper.IsExistsVersion(GameDir, VersionInfo.Id)) throw new Exception("找不到原版核心");
                 string VersionPath = Path.Combine(new string[] { GameDir, "versions", VersionName });
@@ -52,7 +62,7 @@ namespace MMCCCore.Core.Module.GameAssemblies
                 File.WriteAllText(Path.Combine(VersionPath, VersionName + ".json"), JsonConvert.SerializeObject(VersionInfo));
                 FileDownloader downloader = new FileDownloader(new DownloadTaskInfo
                 {
-                    DestPath = Path.Combine(GameDir, "libraries", $"com\\mumfrey\\liteloader\\{InstallInfo.Version}\\{InstallInfo.Build.FileName}"),
+                    DestPath = Path.Combine(GameDir, "libraries", "com", "mumfrey", "liteloader", InstallInfo.Version.ToString(), InstallInfo.Build.FileName),
                     DownloadUrl = $"https://download.mcbbs.net/liteloader/download?version={InstallInfo.Version}",
                     MaxTryCount = 4
                 });

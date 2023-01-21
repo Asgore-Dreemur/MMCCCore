@@ -22,6 +22,12 @@ namespace MMCCCore.Core.Module.GameAssemblies
     public class Forge : InstallerModel
     {
         private static WebClient WebClient = new WebClient();
+        public string GameDir { get; set; }
+        public int MaxThreadCount { get; set; } = 64;
+        public string VersionName { get; set; }
+        public  string JavaPath { get; set; }
+
+
         public static List<ForgeVersionModel> GetForgeVersionsFromVersion(string MCVersion)
         {
             string VersionStr = WebClient.DownloadString($"https://bmclapi2.bangbang93.com/forge/minecraft/{MCVersion}");
@@ -42,10 +48,13 @@ namespace MMCCCore.Core.Module.GameAssemblies
             return ForgeVersionList;
         }
 
-        public InstallerResponse InstallForge(ForgeVersionModel InstallInfo, string GameDir, string VersionName, string JavaPath, int MaxThreadCount = 64)
+        public InstallerResponse InstallForge(ForgeVersionModel InstallInfo) => InstallForgeTaskAsync(InstallInfo).GetAwaiter().GetResult();
+
+        public async Task<InstallerResponse> InstallForgeTaskAsync(ForgeVersionModel InstallInfo)
         {
             try
             {
+                GameDir = OtherTools.FormatPath(GameDir);
                 if (string.IsNullOrWhiteSpace(VersionName) || CoreWrapper.IsExistsVersion(GameDir, VersionName)) throw new Exception("版本名不可重名或留空");
                 string ForgePath = Path.Combine(Path.GetTempPath(), "forge.jar");
                 string ForgeInstallerPath = Path.Combine(Path.GetTempPath(), "forge-installer-bootstapper.jar");
@@ -111,7 +120,8 @@ namespace MMCCCore.Core.Module.GameAssemblies
                 MultiFileDownloader mdownloader = new MultiFileDownloader(DownloadStack, 64);
                 mdownloader.ProgressChanged += Mdownloader_ProgressChanged;
                 mdownloader.StartDownload();
-                mdownloader.WaitDownloadComplete();
+                var result = mdownloader.WaitDownloadComplete();
+                if (result.Result == DownloadResult.Error) throw new Exception("下载支持库时出现一个或多个文件错误", result.ErrorException);
                 OtherTools.CreateDir(Path.Combine(GameDir, "libraries", "data"));
                 var LzmaPath = Path.Combine(GameDir, "libraries", "data", "client.lzma");
                 if (File.Exists(LzmaPath)) File.Delete(LzmaPath);
@@ -223,11 +233,6 @@ namespace MMCCCore.Core.Module.GameAssemblies
 
         private void Mdownloader_ProgressChanged(object sender, (int, int, DownloadResultModel) e)
         {
-            if (e.Item3.Result == DownloadResult.Error)
-            {
-                ((MultiFileDownloader)sender).StopDownload();
-                throw new Exception($"下载{e.Item3.DownloadInfo.DownloadUrl}时出现错误:{e.Item3.ErrorException.Message}");
-            }
             double DownloadedProgress = (double)Math.Round((decimal)e.Item1 / e.Item2, 2);
             OnProgressChanged(DownloadedProgress, "下载支持库");
         }
@@ -259,9 +264,9 @@ namespace MMCCCore.Core.Module.GameAssemblies
                 OnProgressChanged(-1, "复制json...");
                 File.WriteAllText(Path.Combine(new string[] { GameDir, "versions", VersionName, VersionName + ".json" }), JsonConvert.SerializeObject(VersionModel));
                 var ForgeName = Regex.Replace(VersionID.ToLower(), InstallInfo.MCVersion + "-forge", "");
-                OtherTools.CreateDir(Path.Combine(GameDir, $"libraries/net/minecraftforge/forge/{ForgeName}"));
+                OtherTools.CreateDir(Path.Combine(GameDir, "libraries", "net", "minecraftforge", "forge", ForgeName));
                 OnProgressChanged(-1, "复制forge jar...");
-                File.Copy(UniversalPath, Path.Combine(GameDir, $"libraries/net/minecraftforge/forge/{ForgeName}/forge-{ForgeName}.jar"));
+                File.Copy(UniversalPath, Path.Combine(GameDir, Path.Combine(GameDir, $"libraries", "net", "minecraftforge", "forge", ForgeName, $"forge-{ForgeName}.jar")));
                 archive.Dispose();
                 VersionReader.Close();
                 Directory.Delete(tempDir, true);

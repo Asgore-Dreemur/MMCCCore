@@ -9,7 +9,6 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
-    <PackageReference Include="Samboy063.Tomlet" Version="5.0.1" />
     <PackageReference Include="System.IO.Compression.ZipFile" Version="4.3.0" />
     <PackageReference Include="Tomlyn" Version="0.16.2" />
   </ItemGroup>

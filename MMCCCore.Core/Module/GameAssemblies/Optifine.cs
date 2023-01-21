@@ -17,6 +17,10 @@ namespace MMCCCore.Core.Module.GameAssemblies
 {
     public class Optifine : InstallerModel
     {
+        public string GameDir { get; set; }
+        public string VersionName { get; set; }
+        public string JavaPath { get; set; }
+
         private static WebClient WebClient = new WebClient();
         public static List<OptifineVersionModel> GetOptifineVersionsFromVersion(string MCVersion)
         {
@@ -33,10 +37,14 @@ namespace MMCCCore.Core.Module.GameAssemblies
             return OptifineList;
         }
         public static string GetOptifineDownloadUrl(OptifineVersionModel model) => $"https://bmclapi2.bangbang93.com/optifine/{model.MCVersion}/{model.Type}/{model.Patch}";
-        public InstallerResponse InstallOptifine(string GameDir, string VersionName, OptifineVersionModel InstallInfo, string JavaPath)
+
+        public InstallerResponse InstallOptifine(OptifineVersionModel InstallInfo) => InstallOptifineTaskAsync(InstallInfo).GetAwaiter().GetResult();
+
+        public async Task<InstallerResponse> InstallOptifineTaskAsync(OptifineVersionModel InstallInfo)
         {
             try
             {
+                GameDir = OtherTools.FormatPath(GameDir);
                 if (string.IsNullOrWhiteSpace(VersionName) || CoreWrapper.IsExistsVersion(GameDir, VersionName)) throw new Exception("版本名不可重名或留空");
                 Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "MMCC"));
                 string OptifinePath = Path.Combine(Path.GetTempPath(), "MMCC", "optifine.jar");
@@ -60,13 +68,20 @@ namespace MMCCCore.Core.Module.GameAssemblies
                     {
                         CreateNoWindow = true,
                         UseShellExecute = false,
+                        RedirectStandardError = true,
+                        RedirectStandardOutput = true,
                         FileName = JavaPath,
                         Arguments = $"-cp \"{OptifinePath}{OtherTools.JavaCPSeparatorChar}{OptifineInstallPath}\" net.stevexmh.OptifineInstaller \"{GameDir}\" \"{VersionName}\""
                     }
                 };
+                string InstallLog = "";
                 InstallProcess.Start();
+                InstallProcess.BeginOutputReadLine();
+                InstallProcess.BeginErrorReadLine();
+                InstallProcess.OutputDataReceived += (_, e) => InstallLog += e.Data;
+                InstallProcess.ErrorDataReceived += (_, e) => InstallLog += e.Data;
                 InstallProcess.WaitForExit();
-                if (InstallProcess.ExitCode != 0) throw new Exception(message: "Optifine安装失败");
+                if (InstallProcess.ExitCode != 0) throw new Exception(message: "Optifine安装失败", new Exception(InstallLog));
                 try { Directory.Delete(Path.Combine(Path.GetTempPath(), "MMCC"), true); } catch (Exception) { }
                 return new InstallerResponse { Exception = null, isSuccess = true };
             }catch(Exception e)

@@ -16,7 +16,7 @@ namespace MMCCCore.Core.Wrapper
 
         public DownloadResultModel StartDownload()
         {
-            DownloadInfo.DestPath = DownloadInfo.DestPath.Replace('/', '\\');
+            DownloadInfo.DestPath = OtherTools.FormatPath(DownloadInfo.DestPath);
             if (DownloadInfo.isSkipDownloadedFile)
             {
                 var result = OtherTools.VaildateSha1(DownloadInfo.DestPath, DownloadInfo.Sha1);
@@ -71,7 +71,7 @@ namespace MMCCCore.Core.Wrapper
 
         public static DownloadResultModel StartDownload(DownloadTaskInfo DownloadInfo)
         {
-            DownloadInfo.DestPath = DownloadInfo.DestPath.Replace('/', '\\');
+            DownloadInfo.DestPath = OtherTools.FormatPath(DownloadInfo.DestPath);
             DownloadResultModel FileDownloadResult = new DownloadResultModel() { DownloadInfo = DownloadInfo };
             if (DownloadInfo.isSkipDownloadedFile && !string.IsNullOrWhiteSpace(DownloadInfo.Sha1))
             {
@@ -156,6 +156,7 @@ namespace MMCCCore.Core.Wrapper
         {
             int ErrorCount = 0;
             Exception exception = null;
+            DownloadInfo.DestPath = OtherTools.FormatPath(DownloadInfo.DestPath);
             while (ErrorCount < DownloadInfo.MaxTryCount)
             {
                 try
@@ -203,6 +204,7 @@ namespace MMCCCore.Core.Wrapper
         {
             int ErrorCount = 0;
             Exception exception = null;
+            DownloadInfo.DestPath = OtherTools.FormatPath(DownloadInfo.DestPath);
             while (ErrorCount < DownloadInfo.MaxTryCount)
             {
                 try
