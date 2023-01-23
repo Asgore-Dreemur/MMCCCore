@@ -61,13 +61,13 @@ namespace MMCCCore.Core.Module.Minecraft
                 FileDownloader downloader = new FileDownloader(new DownloadTaskInfo
                 {
                     DestPath = JarPath,
-                    DownloadUrl = DownloadAPIManager.Current.CoreJar != null ? DownloadAPIManager.Current.CoreJar.Replace("<version>", VersionInfo.Id)
+                    DownloadUrl = DownloadAPIManager.Current.CoreJar != null ? DownloadAPIManager.Current.CoreJar.Replace("<version>", InstallInfo.Id)
                     : VersionInfo.Downloads.Client.Url,
                     MaxTryCount = 4
                 });
                 downloader.DownloadProgressChanged += (_e, status) => OnProgressChanged(status, "下载本体文件");
                 var FileDownloadResult = downloader.StartDownload();
-                if (FileDownloadResult.Result == DownloadResult.Error) throw new Exception(message: "本体文件下载失败", innerException: new Exception(FileDownloadResult.ErrorException.Message));
+                if (FileDownloadResult.Result == DownloadResult.Error) throw new Exception(message: "本体文件下载失败", innerException: FileDownloadResult.ErrorException);
                 MCLibrary library = new MCLibrary();
                 OnProgressChanged(0.00, "下载支持库");
                 library.ProgressChanged += (_e, status) => OnProgressChanged(status.Item1, "下载支持库");

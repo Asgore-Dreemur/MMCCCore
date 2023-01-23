@@ -47,7 +47,7 @@ namespace MMCCCore.Core.Model.Core
         [JsonProperty("mainClass")]
         public string MainClass { get; set; }
         [JsonProperty("minimumLauncherVersion")]
-        public int MinimumLauncherVersion { get; set; }
+        public double MinimumLauncherVersion { get; set; }
         [JsonProperty("releaseTime")]
         public string ReleaseTime { get; set; }
         [JsonProperty("time", NullValueHandling = NullValueHandling.Ignore)]
@@ -56,11 +56,11 @@ namespace MMCCCore.Core.Model.Core
         public List<MCLibraryFileModel> Libraries { get; set; } = new List<MCLibraryFileModel>();
         [JsonProperty("inheritsFrom", NullValueHandling = NullValueHandling.Ignore)]
         public string InheritsFrom { get; set; }
-        [JsonProperty("arguments")]
+        [JsonProperty("arguments", NullValueHandling = NullValueHandling.Ignore)]
         public GameArgumentsModel Arguments { get; set; }
         [JsonProperty("downloads", NullValueHandling = NullValueHandling.Ignore)]
         public GameDownloadsModel Downloads { get; set; }
-        [JsonProperty("assetIndex")]
+        [JsonProperty("assetIndex", NullValueHandling = NullValueHandling.Ignore)]
         public GameAssetsIndexModel AssetIndex { get; set; }
         [JsonProperty("minecraftArguments", NullValueHandling = NullValueHandling.Ignore)]
         public string MinecraftArguments { get; set; }
@@ -102,7 +102,7 @@ namespace MMCCCore.Core.Model.Core
         [JsonProperty("checksums", NullValueHandling = NullValueHandling.Ignore)]
         public List<string> CheckSums { get; set; }
         [JsonProperty("clientreq", NullValueHandling = NullValueHandling.Ignore)]
-        public bool? ClientReq { get; set; }
+        public bool? ClientReq { get; set; } = null;
     }
 
     public class MCFileModel
@@ -178,6 +178,18 @@ namespace MMCCCore.Core.Model.Core
         public string CheckSum { get; set; }
         public bool isNative { get; set; }
         public MCLibraryFileModel LibraryJson { get; set; }
+    }
+
+
+
+    public class LauncherProfileProfileModel
+    {
+        [JsonProperty("icon")]
+        public string Icon { get; set; }
+        [JsonProperty("name")]
+        public string Name { get; set; }
+        [JsonProperty("lastVersionId")]
+        public string LastVersionId { get; set; }
     }
 
     public enum GameVersionType

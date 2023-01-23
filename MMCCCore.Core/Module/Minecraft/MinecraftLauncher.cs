@@ -166,9 +166,12 @@ namespace MMCCCore.Core.Module.Launcher
                 var VanilaJson = JsonConvert.DeserializeObject<LocalMCVersionJsonModel>(File.ReadAllText(VanilaJsonPath));
                 if (VanilaJson == null) throw new Exception("此核心非原版,但它的原版json无效");
                 rmodel.VersionJson.AssetIndex = VanilaJson.AssetIndex;
-                rmodel.VersionJson.Arguments.Jvm = VanilaJson.Arguments.Jvm.Concat(rmodel.VersionJson.Arguments.Jvm).Distinct().ToList();
-                rmodel.VersionJson.Arguments.Game = VanilaJson.Arguments.Game.Concat(rmodel.VersionJson.Arguments.Game).Distinct().ToList();
-                rmodel.VersionJson.Libraries = rmodel.VersionJson.Libraries.Concat(VanilaJson.Libraries).Distinct().ToList();
+                if (rmodel.VersionJson.Arguments != null)
+                {
+                    rmodel.VersionJson.Arguments.Jvm = VanilaJson.Arguments.Jvm.Concat(rmodel.VersionJson.Arguments.Jvm).Distinct().ToList();
+                    rmodel.VersionJson.Arguments.Game = VanilaJson.Arguments.Game.Concat(rmodel.VersionJson.Arguments.Game).Distinct().ToList();
+                    rmodel.VersionJson.Libraries = rmodel.VersionJson.Libraries.Concat(VanilaJson.Libraries).Distinct().ToList();
+                }
                 rmodel.VersionJson.Downloads = VanilaJson.Downloads;
             }
             return rmodel;
@@ -179,17 +182,15 @@ namespace MMCCCore.Core.Module.Launcher
             Dictionary<string, string> LaunchGCArguments = new Dictionary<string, string>()
             {
                 {"${auth_player_name}", LaunchAccount.Name },
-                {"${version_name}",
-                    string.IsNullOrEmpty(LaunchCore.VersionJson.InheritsFrom) ? LaunchCore.Id
-                    : LaunchCore.VersionJson.InheritsFrom
-                },
-                {"${game_directory}", "\"" + GameCore.GameRootDir  + "\""},
+                {"${version_name}", LaunchCore.Id},
+                {"${game_directory}", "\"" + Path.Combine(GameCore.GameRootDir, "versions", GameCore.Id)  + "\""},
                 {"${assets_root}", "\"" + Path.Combine(GameCore.GameRootDir, "assets") + "\"" },
                 {"${assets_index_name}", GameCore.VersionJson.AssetIndex.Id },
                 {"${auth_uuid}", LaunchAccount.Uuid.ToString("N") },
                 {"${auth_access_token}", LaunchAccount.AccessToken },
                 {"${user_type}", LaunchAccount.LoginType == AccountType.Offline ? "Legacy" : "Mojang" },
-                {"${version_type}", GameCore.VersionJson.Type }
+                {"${version_type}", GameCore.VersionJson.Type },
+                {"${user_properties}", "{}" }
             };
 
             List<string> GCArguments = new List<string>();

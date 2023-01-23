@@ -76,6 +76,7 @@ namespace MMCCCore.Core.Module.GameAssemblies
                 }
                 LocalMCVersionJsonModel ForgeVersionInfo = JsonConvert.DeserializeObject<LocalMCVersionJsonModel>(new StreamReader(archive.GetEntry("version.json").Open()).ReadToEnd());
                 ForgeVersionInfo.Id = VersionName;
+                ForgeVersionInfo.InheritsFrom = InstallInfo.MCVersion;
                 string VersionPath = Path.Combine(GameDir, "versions", VersionName);
                 OtherTools.CreateDir(VersionPath);
                 VersionPath = Path.Combine(VersionPath, VersionName + ".json");
@@ -243,7 +244,7 @@ namespace MMCCCore.Core.Module.GameAssemblies
         {
             try
             {
-                string tempDir = Path.Combine(Path.GetTempPath(), "MMCC");
+                /*string tempDir = Path.Combine(Path.GetTempPath(), "MMCC");
                 if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
                 OtherTools.CreateDir(tempDir);
                 ZipArchive archive = new ZipArchive(new FileStream(ForgePath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite));
@@ -260,6 +261,7 @@ namespace MMCCCore.Core.Module.GameAssemblies
                 StreamReader VersionReader = new StreamReader(Path.Combine(tempDir, "version.json"));
                 LocalMCVersionJsonModel VersionModel = JsonConvert.DeserializeObject<LocalMCVersionJsonModel>(VersionReader.ReadToEnd());
                 string VersionID = VersionModel.Id;
+                VersionModel.Id = VersionName;
                 OtherTools.CreateDir(Path.Combine(new string[] { GameDir, "versions", VersionName }));
                 OnProgressChanged(-1, "复制json...");
                 File.WriteAllText(Path.Combine(new string[] { GameDir, "versions", VersionName, VersionName + ".json" }), JsonConvert.SerializeObject(VersionModel));
@@ -270,6 +272,58 @@ namespace MMCCCore.Core.Module.GameAssemblies
                 archive.Dispose();
                 VersionReader.Close();
                 Directory.Delete(tempDir, true);
+                return new InstallerResponse { isSuccess = true, Exception = null };*/
+                string ForgeVersion = $"{InstallInfo.MCVersion}-{InstallInfo.Version}";
+                OnProgressChanged(0.1, "读取jar");
+                ZipArchive archive = new ZipArchive(new FileStream(ForgePath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite));
+                var universaljar = archive.GetEntry($"forge-{ForgeVersion}-universal.jar");
+                if (universaljar == null) throw new Exception("找不到universal文件,无法继续安装");
+                var uarchive = new ZipArchive(universaljar.Open());
+                var versionjson = uarchive.GetEntry("version.json");
+                if (versionjson == null) throw new Exception("找不到version.json");
+                string ForgeJsonStr = new StreamReader(versionjson.Open()).ReadToEnd();
+                var ForgeJson = JsonConvert.DeserializeObject<LocalMCVersionJsonModel>(ForgeJsonStr);
+                Stack<DownloadTaskInfo> DownloadFiles = new Stack<DownloadTaskInfo>();
+                OnProgressChanged(0.0, "下载支持库");
+                foreach (var item in ForgeJson.Libraries)
+                {
+                    if ((!item.ClientReq.HasValue || item.ClientReq.Value == false) || string.IsNullOrEmpty(item.Url)) continue;
+                    string LibraryPath = MCLibrary.GetMavenFilePathFromName(item.Name).Replace('\\', '/').TrimStart('/');
+                    string DownloadPath = OtherTools.FormatPath(Path.Combine(GameDir, "libraries", LibraryPath));
+                    OtherTools.CreateDir(DownloadPath.Substring(0, DownloadPath.LastIndexOf(Path.DirectorySeparatorChar)));
+                    string DownloadUrl = item.Url.TrimEnd('/') + LibraryPath;
+                    DownloadTaskInfo info = new DownloadTaskInfo
+                    {
+                        DestPath = DownloadPath,
+                        isSkipDownloadedFile = true,
+                        DownloadUrl = DownloadUrl,
+                        MaxTryCount = 4
+                    };
+                    if(item.CheckSums.Count > 0)
+                    {
+                        info.Sha1Vaildate = true;
+                        info.Sha1 = item.CheckSums[0];
+                    }
+                    DownloadFiles.Push(info);
+                }
+                MultiFileDownloader downloader = new MultiFileDownloader(DownloadFiles, MaxThreadCount);
+                downloader.ProgressChanged += Mdownloader_ProgressChanged;
+                downloader.StartDownload();
+                var result = downloader.WaitDownloadComplete();
+                if (result.Result == DownloadResult.Error) throw new Exception($"一个或多个文件下载错误", result.ErrorException);
+                
+                string ForgeLibPath = OtherTools.FormatPath(Path.Combine(GameDir, "libraries", "net", "minecraftforge", "forge", ForgeVersion));
+                OnProgressChanged(0.6, "复制支持库");
+                OtherTools.CreateDir(ForgeLibPath);
+                ForgeLibPath = Path.Combine(ForgeLibPath, $"forge-{ForgeVersion}.jar");
+                if (File.Exists(ForgeLibPath)) File.Delete(ForgeLibPath);
+                universaljar.ExtractToFile(ForgeLibPath);
+                ForgeJson.Id = VersionName;
+                string VersionPath = OtherTools.FormatPath(Path.Combine(GameDir, "versions", VersionName));
+                OtherTools.CreateDir(VersionPath);
+                string VersionJsonPath = OtherTools.FormatPath(Path.Combine(VersionPath, VersionName + ".json"));
+                OnProgressChanged(0.8, "写入Json");
+                File.WriteAllText(VersionJsonPath, JsonConvert.SerializeObject(ForgeJson));
                 return new InstallerResponse { isSuccess = true, Exception = null };
             }
             catch (Exception e)

@@ -12,6 +12,8 @@ using MMCCCore.Core.Module.GameAssemblies;
 using MMCCCore.Core.Model.GameAssemblies;
 using MMCCCore.Core.Model.Core;
 using MMCCCore.Core.Module.Launcher;
+using MMCCCore.Core.Wrapper;
+using MMCCCore.Core.Model.Launch;
 
 namespace MMCCCore.Core.Core.Demo
 {
@@ -20,7 +22,28 @@ namespace MMCCCore.Core.Core.Demo
         static void Main(string[] args)
         {
             DownloadAPIManager.Current = DownloadAPIManager.Mcbbs;
-            
+            string GameRoot = "C:\\MMCCTest.Minecraft";
+            /*var versions = CoreWrapper.GetMCVersions();
+            var version = versions.AllVersions.Find(i => i.Id == "1.8.9");
+            var result = InstallVanillaMinecraft(GameRoot, version, "1.8.9");*/
+            var settings = new LauncherSettings
+            {
+                JvmSettings = new LauncherJvmSettings
+                {
+                    JavawPath = @"I:\Program Files\Java\jdk1.8.0_202\bin\java.exe",
+                    MaxMemory = 500,
+                    MinMemory = 300,
+                    //OtherArguments = new System.Collections.Generic.List<string>() { "-jar C:\\MMCCTest.Minecraft\\versions\\1.8.9\\1.8.9.jar"}
+                },
+ 
+            };
+            var core = CoreWrapper.GetCoreFromId(GameRoot, "1.8.9-forge2");
+            Account account = OfflineAuthenticator.OfflineAuthenticate("Asriel");
+            var res = LaunchMinecraft(core, account, settings);
+            res.MCProcess.WaitForExit();
+            /*var files = Forge.GetForgeVersionsFromVersion("1.8.9")[0];
+            var result = InstallForge(GameRoot, files, "1.8.9-forge2", "java", 64);*/
+            ;
         }
 
         public static InstallerResponse InstallVanillaMinecraft(string GameRoot, MCVersionModel model, string VersionName, int MaxThreadCount = 64, bool isSkipFile = true)
@@ -98,12 +121,12 @@ namespace MMCCCore.Core.Core.Demo
             launcher.LaunchMinecraft();
         }
 
-        public static void LaunchMinecraft(LocalGameInfoModel LauncherCore, Account LauncherAccount, LauncherSettings LauncherSetting, string authlib)
+        public static MCLaunchResponse LaunchMinecraft(LocalGameInfoModel LauncherCore, Account LauncherAccount, LauncherSettings LauncherSetting)
         {
             MinecraftLauncher launcher = new MinecraftLauncher(LauncherCore, LauncherAccount, LauncherSetting);
             launcher.Minecraft_LogAdded += Launcher_Minecraft_LogAdded;
             launcher.Minecraft_Exited += Launcher_Minecraft_Exited;
-            launcher.LaunchMinecraft();
+            return launcher.LaunchMinecraft();
         }
 
         private static void Installer_ProgressChanged(object sender, (double, string) e)

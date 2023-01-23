@@ -133,6 +133,7 @@ namespace MMCCCore.Core.Module.Minecraft
                     if (model.Name == null) continue;
                     info.Url = DownloadAPIManager.Current.Libraries.TrimEnd('/') + $"/{GetMavenFilePathFromName(model.Name)}";
                     info.Path = GetMavenFilePathFromName(model.Name);
+                    info.isEnabled = !model.ClientReq.HasValue ? false : model.ClientReq.Value;
                     LibrariesList.Add(info);
                     continue;
                 }
