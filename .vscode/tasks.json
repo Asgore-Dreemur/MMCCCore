@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/MMCCCore.Demo.csproj",
+                "${workspaceFolder}/MMCCCore.Demo/MMCCCore.Demo.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -19,7 +19,7 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/MMCCCore.Demo.csproj",
+                "${workspaceFolder}/MMCCCore.Demo/MMCCCore.Demo.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -33,7 +33,7 @@
                 "watch",
                 "run",
                 "--project",
-                "${workspaceFolder}/MMCCCore.Demo.csproj"
+                "${workspaceFolder}/MMCCCore.Demo/MMCCCore.Demo.csproj"
             ],
             "problemMatcher": "$msCompile"
         }
