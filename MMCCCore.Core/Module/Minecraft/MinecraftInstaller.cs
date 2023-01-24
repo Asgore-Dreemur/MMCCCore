@@ -36,8 +36,8 @@ namespace MMCCCore.Core.Module.Minecraft
             if (CoreWrapper.IsExistsVersion(GameDir, VersionName) || string.IsNullOrWhiteSpace(VersionName)) 
                 return new InstallerResponse { Exception = new Exception("不能和现有版本重名或留空"), isSuccess = false };
             string LibrariesPath = Path.Combine(GameDir, "libraries");
-            string AssetsObjectPath = Path.Combine(GameDir, "assets\\objects");
-            string AssetIndexPath = Path.Combine(GameDir, "assets\\indexes");
+            string AssetsObjectPath = Path.Combine(GameDir, "assets", "objects");
+            string AssetIndexPath = Path.Combine(GameDir, "assets", "indexes");
             string VersionPath = Path.Combine(GameDir, "versions", VersionName);
             string NativesPath = Path.Combine(GameDir, "versions", VersionName, "natives");
             try

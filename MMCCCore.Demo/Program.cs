@@ -22,28 +22,6 @@ namespace MMCCCore.Core.Core.Demo
         static void Main(string[] args)
         {
             DownloadAPIManager.Current = DownloadAPIManager.Mcbbs;
-            string GameRoot = "C:\\MMCCTest.Minecraft";
-            /*var versions = CoreWrapper.GetMCVersions();
-            var version = versions.AllVersions.Find(i => i.Id == "1.8.9");
-            var result = InstallVanillaMinecraft(GameRoot, version, "1.8.9");*/
-            var settings = new LauncherSettings
-            {
-                JvmSettings = new LauncherJvmSettings
-                {
-                    JavawPath = @"I:\Program Files\Java\jdk1.8.0_202\bin\java.exe",
-                    MaxMemory = 500,
-                    MinMemory = 300,
-                    //OtherArguments = new System.Collections.Generic.List<string>() { "-jar C:\\MMCCTest.Minecraft\\versions\\1.8.9\\1.8.9.jar"}
-                },
- 
-            };
-            var core = CoreWrapper.GetCoreFromId(GameRoot, "1.8.9-forge2");
-            Account account = OfflineAuthenticator.OfflineAuthenticate("Asriel");
-            var res = LaunchMinecraft(core, account, settings);
-            res.MCProcess.WaitForExit();
-            /*var files = Forge.GetForgeVersionsFromVersion("1.8.9")[0];
-            var result = InstallForge(GameRoot, files, "1.8.9-forge2", "java", 64);*/
-            ;
         }
 
         public static InstallerResponse InstallVanillaMinecraft(string GameRoot, MCVersionModel model, string VersionName, int MaxThreadCount = 64, bool isSkipFile = true)

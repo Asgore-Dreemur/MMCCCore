@@ -16,6 +16,7 @@ namespace MMCCCore.Core.Module.Mod
         public Curseforge(string APIKey)
         {
             this.APIKey = APIKey;
+            WebClient.Headers.Add("User-Agent", "MMCCCore v1.0");
         }
         public CurseforgeModModel SearchMods(SearchModel SearchInfo)
         {

@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.IO;
+using System.Net.Http.Headers;
 
 namespace MMCCCore.Core.Wrapper
 {
@@ -15,11 +16,12 @@ namespace MMCCCore.Core.Wrapper
         private HttpClient HttpClient = new HttpClient();
         public async Task<HttpResponseMessage> HttpGetAsync(string url, string ContentType = "application/json", Tuple<string, string> AuthTuple = default)
         {
-            HttpRequestMessage message = new HttpRequestMessage(HttpMethod.Get, url);;
+            HttpRequestMessage message = new HttpRequestMessage(HttpMethod.Get, url);
             if(AuthTuple != null)
             {
                 message.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(AuthTuple.Item1, AuthTuple.Item2);
             }
+            message.Headers.Add("User-Agent", "MMCCCore v1.0");
             var responseMessage = await HttpClient.SendAsync(message, HttpCompletionOption.ResponseContentRead, CancellationToken.None);
             if (responseMessage.StatusCode.Equals(HttpStatusCode.Found))
             {
@@ -40,6 +42,7 @@ namespace MMCCCore.Core.Wrapper
             var PostContent = new StringContent(content);
             PostContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(ContentType);
             message.Content = PostContent;
+            message.Headers.Add("User-Agent", "MMCCCore v1.0");
             var res = await HttpClient.SendAsync(message);
             message.Dispose();
             PostContent.Dispose();
@@ -52,6 +55,7 @@ namespace MMCCCore.Core.Wrapper
             var PostContent = new StringContent("");
             PostContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(ContentType);
             message.Content = PostContent;
+            message.Headers.Add("User-Agent", "MMCCCore v1.0");
             var res = await HttpClient.SendAsync(message);
             message.Dispose();
             PostContent.Dispose();
@@ -63,6 +67,7 @@ namespace MMCCCore.Core.Wrapper
             var PostContent = new FormUrlEncodedContent(content);
             PostContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(ContentType);
             message.Content = PostContent;
+            message.Headers.Add("User-Agent", "MMCCCore v1.0");
             var res = await HttpClient.SendAsync(message);
             message.Dispose();
             PostContent.Dispose();

@@ -15,6 +15,7 @@ using MMCCCore.Core.Model.Wrapper;
 using System.IO.Compression;
 using MMCCCore.Core.Model.Core;
 using System.Diagnostics;
+using MMCCCore.Core.Module.APIManager;
 using System.Text.RegularExpressions;
 
 namespace MMCCCore.Core.Module.GameAssemblies
@@ -54,11 +55,10 @@ namespace MMCCCore.Core.Module.GameAssemblies
         {
             try
             {
+                if (DownloadAPIManager.Current == null) throw new Exception("未知的下载源");
                 GameDir = OtherTools.FormatPath(GameDir);
                 if (string.IsNullOrWhiteSpace(VersionName) || CoreWrapper.IsExistsVersion(GameDir, VersionName)) throw new Exception("版本名不可重名或留空");
                 string ForgePath = Path.Combine(Path.GetTempPath(), "forge.jar");
-                string ForgeInstallerPath = Path.Combine(Path.GetTempPath(), "forge-installer-bootstapper.jar");
-                File.WriteAllBytes(ForgeInstallerPath, InstallerResources.forge_install_bootstrapper);
                 OnProgressChanged(0, "下载forge...");
                 FileDownloader downloader = new FileDownloader(new DownloadTaskInfo
                 {
@@ -87,7 +87,7 @@ namespace MMCCCore.Core.Module.GameAssemblies
                 foreach (var LibraryInfo in LibrariesList)
                 {
                     if (string.IsNullOrEmpty(LibraryInfo.Url)) continue;
-                    string LibraryUrl = LibraryInfo.Url.Replace("maven.minecraftforge.net", "download.mcbbs.net/maven");
+                    string LibraryUrl = DownloadAPIManager.Current == DownloadAPIManager.Raw ? LibraryInfo.Url : LibraryInfo.Url.Replace("maven.minecraftforge.net", DownloadAPIManager.Current.Libraries.TrimStart("http://".ToCharArray()).TrimStart("https://".ToCharArray()));
                     string LibraryDir = Path.Combine(GameDir, "libraries", LibraryInfo.Path.Substring(0, LibraryInfo.Path.LastIndexOf('/')));
                     string LibraryPath = Path.Combine(GameDir, "libraries", LibraryInfo.Path);
                     OtherTools.CreateDir(LibraryDir);
@@ -107,7 +107,7 @@ namespace MMCCCore.Core.Module.GameAssemblies
                 foreach (var LibraryInfo in LibrariesList)
                 {
                     if (string.IsNullOrEmpty(LibraryInfo.Url)) continue;
-                    string LibraryUrl = LibraryInfo.Url.Replace("maven.minecraftforge.net", "download.mcbbs.net/maven");
+                    string LibraryUrl = DownloadAPIManager.Current == DownloadAPIManager.Raw ? LibraryInfo.Url : LibraryInfo.Url.Replace("maven.minecraftforge.net", DownloadAPIManager.Current.Libraries.TrimStart("http://".ToCharArray()).TrimStart("https://".ToCharArray()).TrimEnd('/'));
                     string LibraryDir = Path.Combine(GameDir, "libraries", LibraryInfo.Path.Substring(0, LibraryInfo.Path.LastIndexOf('/')));
                     string LibraryPath = Path.Combine(GameDir, "libraries", LibraryInfo.Path);
                     OtherTools.CreateDir(LibraryDir);
@@ -238,41 +238,10 @@ namespace MMCCCore.Core.Module.GameAssemblies
             OnProgressChanged(DownloadedProgress, "下载支持库");
         }
 
-        //该函数用于安装低版本的forge,但在使用Steve-xmh在bangbang93的forge-install-bootstrapper的基础上更改的jar后,不需要此函数,所以该函数被弃用
-        //更新，使用Steve-xmh的forge-install-bootstrapper出现问题，临时更换回原本的安装方式
         public InstallerResponse InstallLowerForge(ForgeVersionModel InstallInfo, string GameDir, string VersionName, string ForgePath)
         {
             try
             {
-                /*string tempDir = Path.Combine(Path.GetTempPath(), "MMCC");
-                if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
-                OtherTools.CreateDir(tempDir);
-                ZipArchive archive = new ZipArchive(new FileStream(ForgePath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite));
-                archive.ExtractToDirectory(tempDir);
-                var tempFolderInfo = new DirectoryInfo(tempDir);
-                if (!tempFolderInfo.Exists) tempFolderInfo.Create();
-                var TempFiles = tempFolderInfo.GetFiles("*.jar");
-                if (TempFiles.Length == 0) throw new Exception("找不到universal文件,下载的Forge文件可能损坏");
-                string UniversalPath = TempFiles[0].FullName;
-                archive.Dispose();
-                OnProgressChanged(-1, "解压forge安装包...");
-                archive = new ZipArchive(new FileStream(UniversalPath, FileMode.Open));
-                archive.GetEntry("version.json").ExtractToFile(Path.Combine(tempDir, "version.json"));
-                StreamReader VersionReader = new StreamReader(Path.Combine(tempDir, "version.json"));
-                LocalMCVersionJsonModel VersionModel = JsonConvert.DeserializeObject<LocalMCVersionJsonModel>(VersionReader.ReadToEnd());
-                string VersionID = VersionModel.Id;
-                VersionModel.Id = VersionName;
-                OtherTools.CreateDir(Path.Combine(new string[] { GameDir, "versions", VersionName }));
-                OnProgressChanged(-1, "复制json...");
-                File.WriteAllText(Path.Combine(new string[] { GameDir, "versions", VersionName, VersionName + ".json" }), JsonConvert.SerializeObject(VersionModel));
-                var ForgeName = Regex.Replace(VersionID.ToLower(), InstallInfo.MCVersion + "-forge", "");
-                OtherTools.CreateDir(Path.Combine(GameDir, "libraries", "net", "minecraftforge", "forge", ForgeName));
-                OnProgressChanged(-1, "复制forge jar...");
-                File.Copy(UniversalPath, Path.Combine(GameDir, Path.Combine(GameDir, $"libraries", "net", "minecraftforge", "forge", ForgeName, $"forge-{ForgeName}.jar")));
-                archive.Dispose();
-                VersionReader.Close();
-                Directory.Delete(tempDir, true);
-                return new InstallerResponse { isSuccess = true, Exception = null };*/
                 string ForgeVersion = $"{InstallInfo.MCVersion}-{InstallInfo.Version}";
                 OnProgressChanged(0.1, "读取jar");
                 ZipArchive archive = new ZipArchive(new FileStream(ForgePath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite));
@@ -287,20 +256,22 @@ namespace MMCCCore.Core.Module.GameAssemblies
                 OnProgressChanged(0.0, "下载支持库");
                 foreach (var item in ForgeJson.Libraries)
                 {
-                    if ((!item.ClientReq.HasValue || item.ClientReq.Value == false) || string.IsNullOrEmpty(item.Url)) continue;
-                    string LibraryPath = MCLibrary.GetMavenFilePathFromName(item.Name).Replace('\\', '/').TrimStart('/');
+                    if ((item.ClientReq.HasValue && item.ClientReq.Value == false) || string.IsNullOrEmpty(item.Url)) continue;
+                    string LibraryPath = OtherTools.FormatPath(MCLibrary.GetMavenFilePathFromName(item.Name)).TrimStart('/');
                     string DownloadPath = OtherTools.FormatPath(Path.Combine(GameDir, "libraries", LibraryPath));
                     OtherTools.CreateDir(DownloadPath.Substring(0, DownloadPath.LastIndexOf(Path.DirectorySeparatorChar)));
-                    string DownloadUrl = item.Url.TrimEnd('/') + LibraryPath;
+                    string DownloadUrl = item.Url.TrimEnd('/') + "/" + LibraryPath.Replace('\\', '/');
+                    if (DownloadAPIManager.Current != DownloadAPIManager.Raw)
+                        DownloadUrl = DownloadUrl.Replace(item.Url.TrimEnd('/'), DownloadAPIManager.Current.Libraries.TrimEnd('/'));
                     DownloadTaskInfo info = new DownloadTaskInfo
                     {
                         DestPath = DownloadPath,
-                        isSkipDownloadedFile = true,
                         DownloadUrl = DownloadUrl,
                         MaxTryCount = 4
                     };
                     if(item.CheckSums.Count > 0)
                     {
+                        info.isSkipDownloadedFile = true;
                         info.Sha1Vaildate = true;
                         info.Sha1 = item.CheckSums[0];
                     }
@@ -311,7 +282,6 @@ namespace MMCCCore.Core.Module.GameAssemblies
                 downloader.StartDownload();
                 var result = downloader.WaitDownloadComplete();
                 if (result.Result == DownloadResult.Error) throw new Exception($"一个或多个文件下载错误", result.ErrorException);
-                
                 string ForgeLibPath = OtherTools.FormatPath(Path.Combine(GameDir, "libraries", "net", "minecraftforge", "forge", ForgeVersion));
                 OnProgressChanged(0.6, "复制支持库");
                 OtherTools.CreateDir(ForgeLibPath);

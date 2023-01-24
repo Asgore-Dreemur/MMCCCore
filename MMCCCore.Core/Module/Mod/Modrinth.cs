@@ -13,7 +13,9 @@ namespace MMCCCore.Core.Module.Mod
     public class Modrinth
     {
         private WebClient WebClient = new WebClient();
-        public Modrinth() { }
+        public Modrinth() {
+            WebClient.Headers.Add("User-Agent", "MMCCCore v1.0");
+        }
         public ModrinthModModel SearchMods(ModrinthSearchModel SearchInfo)
         {
             string SearchUrl = $"https://mcim.z0z0r4.top/modrinth/search";

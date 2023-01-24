@@ -60,11 +60,11 @@ namespace MMCCCore.Core.Wrapper
         }
         public static void CreateDir(string path)
         {
-            path = path.Replace('/', '\\');
-            string[] pathtree = path.Split('\\');
+            path = FormatPath(path);
+            string[] pathtree = path.Split(Path.DirectorySeparatorChar);
             if (pathtree.Count() != 1)
             {
-                string pathd = pathtree[0] + "\\";
+                string pathd = pathtree[0] + Path.DirectorySeparatorChar;
                 for (int i = 1; i < pathtree.Count(); i++)
                 {
                     if (!Directory.Exists(Path.Combine(pathd, pathtree[i]))) Directory.CreateDirectory(Path.Combine(pathd, pathtree[i]));

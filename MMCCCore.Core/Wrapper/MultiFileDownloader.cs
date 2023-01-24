@@ -15,10 +15,10 @@ namespace MMCCCore.Core.Wrapper
         private int AllFileCount, ThreadCount;
         public event EventHandler<(int, int, DownloadResultModel)> ProgressChanged;
         private Queue<Thread> ThreadQueue = new Queue<Thread>();
-        public List<DownloadResultModel> ErrorFiles { get; set; } = new List<DownloadResultModel>();
         private List<DownloadResultModel> DownloadedFile = new List<DownloadResultModel>();
         private bool shouldStop { get; set; } = false;
         private static object locker = new object();
+        private List<DownloadResultModel> CompletedThread = new List<DownloadResultModel>();
 
         public MultiFileDownloader(Stack<DownloadTaskInfo> DownloadStack, int ThreadCount = 32)
         {
@@ -34,7 +34,7 @@ namespace MMCCCore.Core.Wrapper
             shouldStop = true;
         }
 
-        private void DownloadThread()
+        private void DownloadThread(object ThreadName)
         {
             try
             {
@@ -43,7 +43,11 @@ namespace MMCCCore.Core.Wrapper
                     DownloadTaskInfo info = null;
                     lock (locker)
                     {
-                        if (DownloadStack.Count <= 0) return;
+                        if (DownloadStack.Count <= 0)
+                        {
+                            CompletedThread.Add(new DownloadResultModel {Result = DownloadResult.Success, ErrorException = null });
+                            return;
+                        }
                         info = DownloadStack.Pop();
                     }
                     var result = FileDownloader.StartDownload(info);
@@ -51,12 +55,15 @@ namespace MMCCCore.Core.Wrapper
                     DownloadedFile.Add(result);
                     if (result.Result == DownloadResult.Error)
                     {
-                        ErrorFiles.Add(result);
+                        CompletedThread.Add(new DownloadResultModel { Result = DownloadResult.Error, ErrorException = result.ErrorException });
                         return;
                     }
                 }
             }
-            catch (Exception) { }
+            catch (Exception e) {
+                CompletedThread.Add(new DownloadResultModel { Result = DownloadResult.Error, ErrorException = e });
+                return;
+            }
         }
 
         private void OnProgressChanged(DownloadResultModel result)
@@ -70,25 +77,24 @@ namespace MMCCCore.Core.Wrapper
             for(int i = 0; i < ThreadCount; i++)
             {
                 Thread thread = new Thread(DownloadThread);
+                thread.Name = i.ToString();
                 ThreadQueue.Enqueue(thread);
-                thread.Start();
+                thread.Start(i.ToString());
             }
         }
 
         public DownloadResultModel WaitDownloadComplete()
         {
-            bool isCompleted = true;
-            while (true)
-            {
-                isCompleted = true;
-                foreach (var item in ThreadQueue)
+            while (CompletedThread.Count < ThreadCount) {
+                foreach(var item in CompletedThread)
                 {
-                    if (shouldStop) return ErrorFiles.Last();
-                    if (item.IsAlive) isCompleted = false;
-                    break;
+                    if(item.Result == DownloadResult.Error)
+                    {
+                        return item;
+                    }
                 }
-                if (isCompleted) return new DownloadResultModel { Result = DownloadResult.Success, ErrorException = null, DownloadInfo = null };
             }
+            return new DownloadResultModel { Result = DownloadResult.Success, ErrorException = null, DownloadInfo = null };
         }
     }
 }

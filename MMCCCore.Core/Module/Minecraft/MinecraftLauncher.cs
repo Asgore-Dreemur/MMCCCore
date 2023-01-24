@@ -170,8 +170,8 @@ namespace MMCCCore.Core.Module.Launcher
                 {
                     rmodel.VersionJson.Arguments.Jvm = VanilaJson.Arguments.Jvm.Concat(rmodel.VersionJson.Arguments.Jvm).Distinct().ToList();
                     rmodel.VersionJson.Arguments.Game = VanilaJson.Arguments.Game.Concat(rmodel.VersionJson.Arguments.Game).Distinct().ToList();
-                    rmodel.VersionJson.Libraries = rmodel.VersionJson.Libraries.Concat(VanilaJson.Libraries).Distinct().ToList();
                 }
+                rmodel.VersionJson.Libraries = rmodel.VersionJson.Libraries.Concat(VanilaJson.Libraries).Distinct().ToList();
                 rmodel.VersionJson.Downloads = VanilaJson.Downloads;
             }
             return rmodel;

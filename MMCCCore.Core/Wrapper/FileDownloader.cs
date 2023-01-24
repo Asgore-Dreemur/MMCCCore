@@ -118,21 +118,15 @@ namespace MMCCCore.Core.Wrapper
                     if (DownloadInfo.Sha1Vaildate && !string.IsNullOrWhiteSpace(DownloadInfo.Sha1))
                     {
                         var result = OtherTools.VaildateSha1(DownloadInfo.DestPath, DownloadInfo.Sha1);
-                        if (!result.isSuccess)
+                        if (!result.isSuccess || !result.isVaildated)
                         {
                             FileDownloadResult.Result = DownloadResult.Error;
                             FileDownloadResult.ErrorException = result.ErrorException;
                             return FileDownloadResult;
                         }
-                        if (result.isVaildated)
+                        else if (result.isVaildated)
                         {
                             FileDownloadResult.Result = DownloadResult.Success;
-                            return FileDownloadResult;
-                        }
-                        else if (!result.isVaildated)
-                        {
-                            FileDownloadResult.Result = DownloadResult.Error;
-                            FileDownloadResult.ErrorException = result.ErrorException;
                             return FileDownloadResult;
                         }
                     }
@@ -164,7 +158,7 @@ namespace MMCCCore.Core.Wrapper
                     HttpWebRequest request = HttpWebRequest.Create(DownloadInfo.DownloadUrl) as HttpWebRequest;
                     request.Referer = DownloadInfo.DownloadUrl;
                     request.Method = "GET";
-                    request.UserAgent = "MMCCCore.Core 1.0/HttpWrapper";
+                    request.UserAgent = "MMCCCore.Core 1.0";
                     request.AllowAutoRedirect = false;
                     request.ContentType = "application/octet-stream";
                     request.Timeout = 10 * 1000;
@@ -212,7 +206,7 @@ namespace MMCCCore.Core.Wrapper
                     HttpWebRequest request = HttpWebRequest.Create(DownloadInfo.DownloadUrl) as HttpWebRequest;
                     request.Referer = DownloadInfo.DownloadUrl;
                     request.Method = "GET";
-                    request.UserAgent = "MMCCCore.Core 1.0/HttpWrapper";
+                    request.UserAgent = "MMCCCore.Core 1.0";
                     request.AllowAutoRedirect = false;
                     request.ContentType = "application/octet-stream";
                     request.Timeout = 10 * 1000;

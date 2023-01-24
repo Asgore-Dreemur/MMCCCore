@@ -29,8 +29,8 @@ namespace MMCCCore.Core.Module.Minecraft
                 {
                     if (LibraryInfo.isEnabled)
                     {
-                        string LibraryPath = Path.Combine(GameDir, "libraries", LibraryInfo.Path.Replace('/', '\\'));
-                        OtherTools.CreateDir(LibraryPath.Substring(0, LibraryPath.LastIndexOf('\\')));
+                        string LibraryPath = Path.Combine(GameDir, "libraries", OtherTools.FormatPath(LibraryInfo.Path));
+                        OtherTools.CreateDir(LibraryPath.Substring(0, LibraryPath.LastIndexOf(Path.DirectorySeparatorChar)));
                         var DownloadInfo = new DownloadTaskInfo { DownloadUrl = DownloadAPIManager.Current.Libraries.TrimEnd('/') + $"/{LibraryInfo.Path}",
                             DestPath = LibraryPath,
                             MaxTryCount = 4,
@@ -54,12 +54,16 @@ namespace MMCCCore.Core.Module.Minecraft
                 {
                     if (item.isNative && item.isEnabled)
                     {
-                        string NativePath = Path.Combine(GameDir, "libraries", item.Path.Replace('/', '\\'));
+                        string LibExtenstion = Environment.OSVersion.Platform == PlatformID.Win32NT
+                            ? ".dll"
+                            : Environment.OSVersion.Platform == PlatformID.MacOSX ? ".dylib"
+                            : Environment.OSVersion.Platform == PlatformID.Unix ? ".so" : string.Empty;
+                        string NativePath = Path.Combine(GameDir, "libraries", OtherTools.FormatPath(item.Path));
                         ZipArchive archive = new ZipArchive(new FileStream(NativePath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite));
                         foreach (var file in archive.Entries)
                         {
                             if (file.Name == "") continue;
-                            if (file.Name.Substring(file.Name.LastIndexOf('.')) == ".dll")
+                            if (file.Name.Substring(file.Name.LastIndexOf('.')) == LibExtenstion)
                             {
                                 string CNativePath = Path.Combine(NativesPath, file.Name);
                                 ZipArchiveEntry entry = archive.GetEntry(file.Name + ".sha1");
@@ -133,7 +137,7 @@ namespace MMCCCore.Core.Module.Minecraft
                     if (model.Name == null) continue;
                     info.Url = DownloadAPIManager.Current.Libraries.TrimEnd('/') + $"/{GetMavenFilePathFromName(model.Name)}";
                     info.Path = GetMavenFilePathFromName(model.Name);
-                    info.isEnabled = !model.ClientReq.HasValue ? false : model.ClientReq.Value;
+                    info.isEnabled = !model.ClientReq.HasValue ? true : model.ClientReq.Value;
                     LibrariesList.Add(info);
                     continue;
                 }

@@ -95,12 +95,12 @@ namespace MMCCCore.Core.Model.Core
         public string Url { get; set; }
 
         [JsonProperty("natives", NullValueHandling = NullValueHandling.Ignore)]
-        public Dictionary<string, string> Natives { get; set; }
+        public Dictionary<string, string> Natives { get; set; } = new Dictionary<string, string>();
 
         [JsonProperty("rules", NullValueHandling = NullValueHandling.Ignore)]
         public IEnumerable<LibraryRules> Rules { get; set; }
         [JsonProperty("checksums", NullValueHandling = NullValueHandling.Ignore)]
-        public List<string> CheckSums { get; set; }
+        public List<string> CheckSums { get; set; } = new List<string>();
         [JsonProperty("clientreq", NullValueHandling = NullValueHandling.Ignore)]
         public bool? ClientReq { get; set; } = null;
     }
