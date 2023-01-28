@@ -9,7 +9,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/MMCCCore.Demo/bin/Debug/netcoreapp3.1/MMCCCore.Demo.dll",
+            "program": "${workspaceFolder}/MMCCCore.Demo/bin/Debug/net6.0/MMCCCore.Demo.dll",
             "args": [],
             "cwd": "${workspaceFolder}/MMCCCore.Demo",
             "console": "integratedTerminal",
