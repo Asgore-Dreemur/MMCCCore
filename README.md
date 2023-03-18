@@ -24,5 +24,4 @@ MMCCCore是一个为Modern Minecraft Client所开发的启动器核心
 + ...
 ## 安装
 + 直接下载项目并引用
-+ 下载发行版里的zip并解压
 + 将项目编译为dll后引用
