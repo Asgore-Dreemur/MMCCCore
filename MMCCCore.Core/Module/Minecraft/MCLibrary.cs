@@ -165,8 +165,6 @@ namespace MMCCCore.Core.Module.Minecraft
                     LibrariesList.Add(info);
                 }
             }
-            string tmp = "";
-            foreach (var item in LibrariesList) tmp += item.Url + ";";
             return LibrariesList;
         }
         private static bool isTheLibraryCanRunOnThisSystem(MCLibraryFileModel model)

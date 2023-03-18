@@ -11,3 +11,8 @@ MMCCCore.Core/obj/
 MMCCCore.Demo/bin/
 
 MMCCCore.Demo/obj/
+
+.vscode
+
+MMCCCore.Core/.vscode/
+MMCCCore.Demo/.vscode/

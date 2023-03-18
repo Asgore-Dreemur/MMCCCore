@@ -151,7 +151,7 @@ namespace MMCCCore.Core.Module.Authenticator
             return info;
         }
 
-        public async Task<OAuth2Result> OAuth2AuthenticateTaskAsync()
+        public async Task<OAuth2Result> StartDeviceFlowRequestTaskAsync()
         {
             Dictionary<string, string> RequestDict = new Dictionary<string, string>()
             {

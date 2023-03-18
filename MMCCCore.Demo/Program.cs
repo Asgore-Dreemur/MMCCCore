@@ -75,7 +75,7 @@ namespace MMCCCore.Core.Core.Demo
         public static MicrosoftAccount MicrosoftAuth(string clientid)
         {
             MicrosoftAuthenticator authenticator = new MicrosoftAuthenticator(clientid);
-            var result1 = authenticator.OAuth2AuthenticateTaskAsync().GetAwaiter().GetResult();
+            var result1 = authenticator.StartDeviceFlowRequestTaskAsync().GetAwaiter().GetResult();
             //这里提醒用户验证
             var result2 = authenticator.OAuth2TokenAuthenticateTaskAsync(result1).GetAwaiter().GetResult();
             authenticator.OAuth2Response = result2;
